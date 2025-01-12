@@ -3,6 +3,9 @@ package org.poo.users;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.poo.accounts.ClassicAccount;
 import org.poo.fileio.UserInput;
+import org.poo.servicePlan.Plan;
+import org.poo.servicePlan.StandardPlan;
+import org.poo.servicePlan.StudentPlan;
 import org.poo.transactions.TransactionStrategy;
 
 import java.util.ArrayList;
@@ -15,6 +18,14 @@ public class User {
 
     @JsonIgnore
     private ArrayList<TransactionStrategy> transactions;
+    @JsonIgnore
+    private String birthDate;
+    @JsonIgnore
+    private String occupation;
+    @JsonIgnore
+    private int numberOfSavingsAccounts;
+    @JsonIgnore
+    private Plan servicePlan;
 
     /**
      * Constructs a new {@code User} based on the provided {@code UserInput} object.
@@ -25,8 +36,16 @@ public class User {
         this.firstName = other.getFirstName();
         this.lastName = other.getLastName();
         this.email = other.getEmail();
+        this.birthDate = other.getBirthDate();
+        this.occupation = other.getOccupation();
         accounts = new ArrayList<>();
         transactions = new ArrayList<>();
+
+        if (other.getOccupation().equals("student")) {
+            servicePlan = new StudentPlan();
+        } else {
+            servicePlan = new StandardPlan();
+        }
     }
 
     /**
@@ -117,5 +136,37 @@ public class User {
      */
     public void setTransactions(final ArrayList<TransactionStrategy> transactions) {
         this.transactions = transactions;
+    }
+
+    public String getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(String birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public String getOccupation() {
+        return occupation;
+    }
+
+    public void setOccupation(String occupation) {
+        this.occupation = occupation;
+    }
+
+    public int getNumberOfSavingsAccounts() {
+        return numberOfSavingsAccounts;
+    }
+
+    public void setNumberOfSavingsAccounts(int numberOfSavingsAccounts) {
+        this.numberOfSavingsAccounts = numberOfSavingsAccounts;
+    }
+
+    public Plan getServicePlan() {
+        return servicePlan;
+    }
+
+    public void setServicePlan(Plan servicePlan) {
+        this.servicePlan = servicePlan;
     }
 }

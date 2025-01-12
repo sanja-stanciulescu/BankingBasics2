@@ -53,6 +53,7 @@ public class ChangeInterestTransaction implements TransactionStrategy {
     public void makeTransaction() {
         if (user == null || account == null) {
             System.out.println("Could not change interest rate");
+            return;
         }
         if (account.getType().equals("classic")) {
             ObjectMapper mapper = new ObjectMapper();

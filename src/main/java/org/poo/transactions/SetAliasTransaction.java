@@ -38,6 +38,10 @@ public class SetAliasTransaction implements TransactionStrategy {
      * If the alias update fails, an error message is printed to the console.
      */
     public void makeTransaction() {
+        if (account == null || registry == null) {
+            System.out.println("Account or IBAN registry is null!");
+            return;
+        }
        if (!registry.updateAlias(account.getIban(), command.getAlias())) {
            System.out.println("Could not update the alias");
        }

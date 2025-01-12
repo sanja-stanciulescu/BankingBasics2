@@ -100,6 +100,10 @@ public class AppManager {
                 transaction = new MinBalanceTransaction(command, output, finder.getUser(),
                                                         finder.getAccount());
                 break;
+            case "withdrawSavings":
+                searchByIban(command.getAccount());
+                transaction = new WithdrawSavingsTransaction(command, bank, finder.getUser(), finder.getAccount());
+                break;
             case "payOnline":
                 searchUserByEmail(command.getEmail());
                 transaction = new PayOnlineTransaction(command, output, bank,

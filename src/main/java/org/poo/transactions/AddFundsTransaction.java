@@ -28,6 +28,10 @@ public class AddFundsTransaction implements TransactionStrategy {
      * Executes the transaction by adding the specified amount to the current account's balance.
      */
     public void makeTransaction() {
+        if (currentAccount == null) {
+            System.out.println("User not found.");
+            return;
+        }
         currentAccount.setBalance(currentAccount.getBalance() + command.getAmount());
     }
 

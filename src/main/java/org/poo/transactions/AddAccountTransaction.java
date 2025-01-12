@@ -56,6 +56,7 @@ public class AddAccountTransaction implements TransactionStrategy {
             String currency = command.getCurrency();
             double interest = command.getInterestRate();
             currentUser.getAccounts().add(new SavingsAccount(iban, currency, "savings", interest));
+            currentUser.setNumberOfSavingsAccounts(currentUser.getNumberOfSavingsAccounts() + 1);
         }
         description = "New account created";
         registry.registerIBAN(iban, iban);

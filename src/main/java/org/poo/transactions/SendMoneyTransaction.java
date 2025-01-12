@@ -103,8 +103,8 @@ public class SendMoneyTransaction implements TransactionStrategy {
             receiverIBAN = receiver.getIban();
             amount = command.getAmount() + " " + giver.getCurrency();
             transferType = "sent";
-            double amount;
 
+            double amount;
             if (!giver.getCurrency().equals(receiver.getCurrency())) {
                 double exchangeRate = bank.getExchangeRate(giver.getCurrency(),
                                                             receiver.getCurrency());
@@ -113,7 +113,15 @@ public class SendMoneyTransaction implements TransactionStrategy {
                 amount = command.getAmount();
             }
 
-            giver.setBalance(giver.getBalance() - command.getAmount());
+            double commission;
+            if (!giver.getCurrency().equals("RON")) {
+                double exchangeRate = bank.getExchangeRate(giver.getCurrency(), "RON");
+                commission = giverUser.getServicePlan().getComissionRate(command.getAmount() * exchangeRate);
+            } else {
+                commission = giverUser.getServicePlan().getComissionRate(command.getAmount());
+            }
+
+            giver.setBalance(giver.getBalance() - command.getAmount() - commission * command.getAmount());
             receiver.setBalance(receiver.getBalance() + amount);
             TransactionStrategy trans = new SendMoneyTransaction(description, timestamp,
                                                                 senderIBAN, receiverIBAN,

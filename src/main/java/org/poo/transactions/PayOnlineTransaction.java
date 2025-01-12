@@ -77,12 +77,20 @@ public class PayOnlineTransaction implements TransactionStrategy {
                     amount = command.getAmount();
                 }
 
+                double commission;
+                if (!account.getCurrency().equals("RON")) {
+                    double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
+                    commission = currentUser.getServicePlan().getComissionRate(command.getAmount() * exchangeRate);
+                } else {
+                    commission = currentUser.getServicePlan().getComissionRate(command.getAmount());
+                }
+
                 int cardChanged = 0;
 
                 if (account.getBalance() - amount <= account.getMinBalance()) {
                     description = "Insufficient funds";
                 } else {
-                    account.setBalance(account.getBalance() - amount);
+                    account.setBalance(account.getBalance() - amount - amount * commission);
                     this.amount = amount;
                     commerciant = command.getCommerciant();
 
