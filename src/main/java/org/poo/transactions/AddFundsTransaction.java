@@ -9,6 +9,8 @@ public class AddFundsTransaction implements TransactionStrategy {
 
     @JsonIgnore
     private ClassicAccount currentAccount;
+    @JsonIgnore
+    private String email;
     private CommandInput command;
 
     /**
@@ -51,5 +53,13 @@ public class AddFundsTransaction implements TransactionStrategy {
      */
     public void setTimestamp(final int timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

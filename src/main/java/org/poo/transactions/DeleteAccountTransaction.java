@@ -20,6 +20,8 @@ public class DeleteAccountTransaction implements TransactionStrategy {
     private ClassicAccount account;
     @JsonIgnore
     private ArrayNode output;
+    @JsonIgnore
+    private String email;
 
     /**
      * Constructs a new {@code DeleteAccountTransaction} with the given command, output, and user.
@@ -187,5 +189,13 @@ public class DeleteAccountTransaction implements TransactionStrategy {
      */
     public void setAccount(final ClassicAccount account) {
         this.account = account;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

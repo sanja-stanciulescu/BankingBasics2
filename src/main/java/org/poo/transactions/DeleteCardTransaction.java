@@ -19,6 +19,8 @@ public class DeleteCardTransaction implements TransactionStrategy {
     private ClassicAccount currentAccount;
     @JsonIgnore
     private User currentUser;
+    @JsonIgnore
+    private String email;
 
     /**
      * Constructs a new {@code DeleteCardTransaction} with the given command, account, and user.
@@ -206,5 +208,13 @@ public class DeleteCardTransaction implements TransactionStrategy {
      */
     public void setCardHolder(final String cardHolder) {
         this.cardHolder = cardHolder;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

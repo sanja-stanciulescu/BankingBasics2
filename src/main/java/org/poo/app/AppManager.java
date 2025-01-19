@@ -3,6 +3,7 @@ package org.poo.app;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.accounts.ClassicAccount;
 import org.poo.cards.Card;
+import org.poo.commerciants.Seller;
 import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
 import org.poo.fileio.ObjectInput;
@@ -10,9 +11,12 @@ import org.poo.transactions.*;
 import org.poo.users.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AppManager {
     private ArrayList<User> allUsers;
+    private Map<String, Seller> allSellers;
     private Bnr bank;
     private IBANRegistry registry;
     private Finder finder;
@@ -22,6 +26,7 @@ public class AppManager {
      */
     public AppManager() {
         allUsers = new ArrayList<>();
+        allSellers = new HashMap<>();
         bank = new Bnr();
         registry = new IBANRegistry();
         finder = new Finder();
@@ -38,6 +43,12 @@ public class AppManager {
         //Initialize the list of users
         for (int i = 0; i < inputData.getUsers().length; i++) {
             allUsers.add(new User(inputData.getUsers()[i]));
+        }
+
+        //Initialize the list of commerciants
+        for (int i = 0; i < inputData.getCommerciants().length; i++) {
+            allSellers.put(inputData.getCommerciants()[i].getCommerciant(),
+                    new Seller(inputData.getCommerciants()[i]));
         }
 
         //Initialize the board where exchange rates are showcased
@@ -107,6 +118,7 @@ public class AppManager {
             case "payOnline":
                 searchUserByEmail(command.getEmail());
                 transaction = new PayOnlineTransaction(command, output, bank,
+                                                        allSellers.get(command.getCommerciant()),
                                                         finder.getUser());
                 break;
             case "sendMoney":
@@ -157,6 +169,14 @@ public class AppManager {
             case "spendingsReport":
                 searchByIban(command.getAccount());
                 transaction = new SpendingsReportTransaction(command, output, finder.getAccount());
+                break;
+            case "upgradePlan":
+                searchByIban(command.getAccount());
+                transaction = new UpgradePlanTransaction(command, finder.getUser(), finder.getAccount(), bank);
+                break;
+            case "cashWithdrawal":
+                searchByCard(command.getCardNumber());
+                transaction = new CashWithdrawTransaction(command, finder.getUser(), finder.getAccount(), finder.getCard(), output, bank);
                 break;
             default:
                 System.out.println("Invalid command");

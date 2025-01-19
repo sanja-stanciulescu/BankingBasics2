@@ -7,6 +7,8 @@ import org.poo.commerciants.Commerciant;
 import org.poo.transactions.TransactionStrategy;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClassicAccount {
     protected double balance;
@@ -18,6 +20,10 @@ public class ClassicAccount {
     private ArrayList<TransactionStrategy> transactions;
     @JsonIgnore
     private Commerciant commerciants;
+    @JsonIgnore
+    private Map<String, Double> coupons;
+    @JsonIgnore
+    private Map<String, Double> totalSpent;
 
     @JsonProperty("IBAN")
     protected String iban;
@@ -42,6 +48,22 @@ public class ClassicAccount {
         cards = new ArrayList<>();
         transactions = new ArrayList<>();
         commerciants = new Commerciant();
+        createCoupons();
+        createSpendings();
+    }
+
+    private void createCoupons() {
+        coupons = new HashMap<>();
+        coupons.put("Food", 0.0);
+        coupons.put("Clothes", 0.0);
+        coupons.put("Tech", 0.0);
+    }
+
+    private void createSpendings() {
+        totalSpent = new HashMap<>();
+        totalSpent.put("Food", 0.0);
+        totalSpent.put("Clothes", 0.0);
+        totalSpent.put("Tech", 0.0);
     }
 
     /**
@@ -202,5 +224,21 @@ public class ClassicAccount {
      */
     public void setCommerciants(final Commerciant commerciants) {
         this.commerciants = commerciants;
+    }
+
+    public Map<String, Double> getCoupons() {
+        return coupons;
+    }
+
+    public void setCoupons(Map<String, Double> coupons) {
+        this.coupons = coupons;
+    }
+
+    public Map<String, Double> getTotalSpent() {
+        return totalSpent;
+    }
+
+    public void setTotalSpent(Map<String, Double> totalSpent) {
+        this.totalSpent = totalSpent;
     }
 }

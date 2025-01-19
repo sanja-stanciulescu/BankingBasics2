@@ -17,6 +17,9 @@ public class AddCardTransaction implements TransactionStrategy {
 
     @JsonIgnore
     private CommandInput command;
+    @JsonIgnore
+    private String email;
+    @JsonIgnore
     private User currentUser;
 
     /**
@@ -196,5 +199,13 @@ public class AddCardTransaction implements TransactionStrategy {
      */
     public void setAccount(final String account) {
         this.account = account;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.accounts.ClassicAccount;
 import org.poo.cards.Card;
+import org.poo.commerciants.Seller;
 import org.poo.exchangeRates.Bnr;
 import org.poo.exchangeRates.ExchangeRate;
 import org.poo.fileio.CommandInput;
@@ -21,6 +22,8 @@ public class PayOnlineTransaction implements TransactionStrategy {
     private CommandInput command;
     @JsonIgnore
     private User currentUser;
+    @JsonIgnore
+    private Seller seller;
     @JsonIgnore
     private Card card;
     @JsonIgnore
@@ -41,11 +44,13 @@ public class PayOnlineTransaction implements TransactionStrategy {
             final CommandInput command,
             final ArrayNode output,
             final Bnr bank,
+            final Seller seller,
             final User currentUser
     ) {
         this.command = command;
         this.output = output;
         this.bank = bank;
+        this.seller = seller;
         this.currentUser = currentUser;
         this.timestamp = command.getTimestamp();
     }
@@ -59,6 +64,8 @@ public class PayOnlineTransaction implements TransactionStrategy {
         ClassicAccount account = pickCard(command.getCardNumber());
             if (account == null) {
                 CheckCardStatusTransaction.printError(command, timestamp, output);
+            } else if (seller == null) {
+                System.out.println("Nu a gasit sellerul la timestamp " + timestamp);
             } else {
                 String currency = account.getCurrency();
                 double amount;
@@ -68,29 +75,41 @@ public class PayOnlineTransaction implements TransactionStrategy {
                     return;
                 }
 
+                double exchangeRate1 = 1;
                 if (!currency.equals(command.getCurrency())) {
-                    double exchangeRate = bank.getExchangeRate(command.getCurrency(), currency);
+                    exchangeRate1 = bank.getExchangeRate(command.getCurrency(), currency);
                     bank.getExchangeRates().add(new ExchangeRate(command.getCurrency(),
-                                                currency, exchangeRate));
-                    amount = command.getAmount() * exchangeRate;
+                            currency, exchangeRate1));
+                    amount = command.getAmount() * exchangeRate1;
                 } else {
                     amount = command.getAmount();
                 }
 
+                double coupon = 0.0;
+                if (account.getCoupons().get(seller.getType()) != -1.0 && account.getCoupons().get(seller.getType()) != 0) {
+                    coupon = account.getCoupons().get(seller.getType()) * amount;
+                    account.getCoupons().put(seller.getType(), -1.0);
+                }
+
                 double commission;
-                if (!account.getCurrency().equals("RON")) {
+                double cashback;
+                if (!command.getCurrency().equals("RON")) {
                     double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
                     commission = currentUser.getServicePlan().getComissionRate(command.getAmount() * exchangeRate);
+                    cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount() * exchangeRate);
                 } else {
+                    cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount());
                     commission = currentUser.getServicePlan().getComissionRate(command.getAmount());
                 }
+
+                cashback = cashback * exchangeRate1 + coupon;
 
                 int cardChanged = 0;
 
                 if (account.getBalance() - amount <= account.getMinBalance()) {
                     description = "Insufficient funds";
                 } else {
-                    account.setBalance(account.getBalance() - amount - amount * commission);
+                    account.setBalance(account.getBalance() - amount - amount * commission + cashback);
                     this.amount = amount;
                     commerciant = command.getCommerciant();
 
@@ -102,12 +121,12 @@ public class PayOnlineTransaction implements TransactionStrategy {
 
                     description = "Card payment";
                     cardChanged = card.useCard(account.getIban(), currentUser,
-                                                currentUser.getEmail(), timestamp);
+                            currentUser.getEmail(), timestamp);
                 }
 
                 if (cardChanged == 1) {
                     currentUser.getTransactions().add(currentUser.getTransactions().size() - 2,
-                                                this);
+                            this);
                 } else {
                     currentUser.getTransactions().add(this);
                 }
@@ -248,4 +267,5 @@ public class PayOnlineTransaction implements TransactionStrategy {
     public void setCommerciant(final String commerciant) {
         this.commerciant = commerciant;
     }
+
 }
