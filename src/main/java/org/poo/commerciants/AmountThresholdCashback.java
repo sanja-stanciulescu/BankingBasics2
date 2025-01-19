@@ -6,7 +6,7 @@ import org.poo.users.User;
 public class AmountThresholdCashback implements CashbackStrategy{
     @Override
     public double calculateCashback(Seller seller, ClassicAccount account, User user, double transactionAmount) {
-        double totalSpent = account.getTotalSpent().get(seller.getType()) + transactionAmount;
+        double totalSpent = account.getTotalSpentPerCommerciant().get(seller.getType()) + transactionAmount;
         double cashback = 0.0;
         if (totalSpent > 500) {
             if (user.getServicePlan().getPlan().equals("standard") || user.getServicePlan().getPlan().equals("student")) {
@@ -33,7 +33,7 @@ public class AmountThresholdCashback implements CashbackStrategy{
                 cashback = 0.5 * transactionAmount / 100;
             }
         }
-        account.getTotalSpent().put(seller.getType(), totalSpent - cashback);
+        account.getTotalSpentPerCommerciant().put(seller.getType(), totalSpent - cashback);
         return cashback;
     }
 }

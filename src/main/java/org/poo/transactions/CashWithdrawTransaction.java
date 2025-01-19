@@ -13,6 +13,7 @@ import org.poo.users.User;
 public class CashWithdrawTransaction implements TransactionStrategy {
     private String description;
     private int timestamp;
+    private Double amount;
 
     @JsonIgnore
     private CommandInput commandInput;
@@ -36,12 +37,13 @@ public class CashWithdrawTransaction implements TransactionStrategy {
         this.bank = bank;
         timestamp = commandInput.getTimestamp();
         description = null;
+        amount = null;
     }
 
     @Override
     public void makeTransaction() {
         if (user == null || account == null || card == null) {
-            CheckCardStatusTransaction.printError(commandInput, timestamp, output);
+            CheckCardStatusTransaction.printError(commandInput, "Card not found", timestamp, output);
         } else {
             if (card.getStatus().equals("frozen")) {
                 description = "The card is frozen";
@@ -49,22 +51,24 @@ public class CashWithdrawTransaction implements TransactionStrategy {
                 return;
             }
 
-            double amount;
+            double tempAmount;
             if (!account.getCurrency().equals("RON")) {
                 double exchangeRate = bank.getExchangeRate("RON", account.getCurrency());
-                amount = commandInput.getAmount() * exchangeRate;
+                tempAmount = commandInput.getAmount() * exchangeRate;
             } else {
-                amount = commandInput.getAmount();
+                tempAmount = commandInput.getAmount();
             }
 
             double commission = user.getServicePlan().getComissionRate(commandInput.getAmount());
 
-            if (account.getBalance() - amount - commission * amount <= account.getMinBalance()) {
+            if (account.getBalance() - tempAmount - commission * tempAmount <= account.getMinBalance()) {
                 description = "Insufficient funds";
-                user.getTransactions().add(this);
             } else {
-                account.setBalance(account.getBalance() - amount - amount * commission);
+                account.setBalance(account.getBalance() - tempAmount - tempAmount * commission);
+                amount = commandInput.getAmount();
+                description = "Cash withdrawal of " + amount;
             }
+            user.getTransactions().add(this);
         }
     }
 
@@ -83,5 +87,13 @@ public class CashWithdrawTransaction implements TransactionStrategy {
 
     public void setTimestamp(int timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
     }
 }

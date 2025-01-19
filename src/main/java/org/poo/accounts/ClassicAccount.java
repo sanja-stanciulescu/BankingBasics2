@@ -23,7 +23,7 @@ public class ClassicAccount {
     @JsonIgnore
     private Map<String, Double> coupons;
     @JsonIgnore
-    private Map<String, Double> totalSpent;
+    private Map<String, Double> totalSpentPerCommerciant;
 
     @JsonProperty("IBAN")
     protected String iban;
@@ -60,10 +60,10 @@ public class ClassicAccount {
     }
 
     private void createSpendings() {
-        totalSpent = new HashMap<>();
-        totalSpent.put("Food", 0.0);
-        totalSpent.put("Clothes", 0.0);
-        totalSpent.put("Tech", 0.0);
+        totalSpentPerCommerciant = new HashMap<>();
+        totalSpentPerCommerciant.put("Food", 0.0);
+        totalSpentPerCommerciant.put("Clothes", 0.0);
+        totalSpentPerCommerciant.put("Tech", 0.0);
     }
 
     /**
@@ -234,11 +234,11 @@ public class ClassicAccount {
         this.coupons = coupons;
     }
 
-    public Map<String, Double> getTotalSpent() {
-        return totalSpent;
+    public Map<String, Double> getTotalSpentPerCommerciant() {
+        return totalSpentPerCommerciant;
     }
 
-    public void setTotalSpent(Map<String, Double> totalSpent) {
-        this.totalSpent = totalSpent;
+    public void setTotalSpentPerCommerciant(Map<String, Double> totalSpentPerCommerciant) {
+        this.totalSpentPerCommerciant = totalSpentPerCommerciant;
     }
 }

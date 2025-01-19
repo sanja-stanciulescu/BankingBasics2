@@ -8,6 +8,7 @@ import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
 import org.poo.fileio.ObjectInput;
 import org.poo.transactions.*;
+import org.poo.transactions.split_payment.*;
 import org.poo.users.User;
 
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ public class AppManager {
                 currentUser = finder.getUser();
                 searchByIban(registry.getIBAN(command.getReceiver()));
                 transaction = new SendMoneyTransaction(command, currentAccount, currentUser,
-                                                       finder.getAccount(), finder.getUser(), bank);
+                                                       finder.getAccount(), finder.getUser(), bank, output);
                 break;
             case "setAlias":
                 searchByIban(command.getAccount());
@@ -149,7 +150,7 @@ public class AppManager {
                 break;
             case "addInterest":
                 searchByIban(command.getAccount());
-                transaction = new AddInterestTransaction(command, output, finder.getAccount());
+                transaction = new AddInterestTransaction(command, output, finder.getUser(), finder.getAccount());
                 break;
             case "splitPayment":
                 ArrayList<Finder> finders = new ArrayList<>();
@@ -161,6 +162,30 @@ public class AppManager {
                     finders.get(i).setCard(finder.getCard());
                 }
                 transaction = new SplitPaymentTransaction(command, finders, bank);
+                break;
+            case "acceptSplitPayment":
+                searchUserByEmail(command.getEmail());
+                if (finder.getUser() == null) {
+                    break;
+                }
+                Command acceptCommand = new AcceptSplitPayment(command.getEmail(),
+                        finder.getUser().getActiveTransactions().stream()
+                                .filter((tran) -> tran.getSplitPaymentType()
+                                                .equals(command.getSplitPaymentType()))
+                                .findFirst().orElse(null));
+                transaction = new CommandAdapter(acceptCommand);
+                break;
+            case "rejectSplitPayment":
+                searchUserByEmail(command.getEmail());
+                if (finder.getUser() == null) {
+                    break;
+                }
+                Command rejectCommand = new RejectSplitPayment(command.getEmail(),
+                        finder.getUser().getActiveTransactions().stream()
+                                .filter((tran) -> tran.getSplitPaymentType()
+                                        .equals(command.getSplitPaymentType()))
+                                .findFirst().orElse(null));
+                transaction = new CommandAdapter(rejectCommand);
                 break;
             case "report":
                 searchByIban(command.getAccount());
@@ -177,6 +202,10 @@ public class AppManager {
             case "cashWithdrawal":
                 searchByCard(command.getCardNumber());
                 transaction = new CashWithdrawTransaction(command, finder.getUser(), finder.getAccount(), finder.getCard(), output, bank);
+                break;
+            case "addNewBusinessAssociate":
+                searchByIban(command.getAccount());
+
                 break;
             default:
                 System.out.println("Invalid command");

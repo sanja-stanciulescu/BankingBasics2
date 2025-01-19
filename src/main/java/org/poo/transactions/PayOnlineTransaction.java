@@ -63,10 +63,14 @@ public class PayOnlineTransaction implements TransactionStrategy {
     public void makeTransaction() {
         ClassicAccount account = pickCard(command.getCardNumber());
             if (account == null) {
-                CheckCardStatusTransaction.printError(command, timestamp, output);
+                CheckCardStatusTransaction.printError(command, "Card not found", timestamp, output);
             } else if (seller == null) {
                 System.out.println("Nu a gasit sellerul la timestamp " + timestamp);
             } else {
+                if (command.getAmount() == 0.0) {
+                    return;
+                }
+
                 String currency = account.getCurrency();
                 double amount;
 

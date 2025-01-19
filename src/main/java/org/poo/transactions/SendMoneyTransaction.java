@@ -2,6 +2,7 @@ package org.poo.transactions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.accounts.ClassicAccount;
 import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
@@ -28,6 +29,8 @@ public class SendMoneyTransaction implements TransactionStrategy {
     private Bnr bank;
     @JsonIgnore
     private CommandInput command;
+    @JsonIgnore
+    private ArrayNode output;
 
     /**
      * Constructs a new {@code SendMoneyTransaction} with the given command input,
@@ -46,7 +49,8 @@ public class SendMoneyTransaction implements TransactionStrategy {
             final User giverUser,
             final ClassicAccount receiver,
             final User receiverUser,
-            final Bnr bank
+            final Bnr bank,
+            final ArrayNode output
     ) {
         this.command = command;
         this.giver = giver;
@@ -54,6 +58,7 @@ public class SendMoneyTransaction implements TransactionStrategy {
         this.receiver = receiver;
         this.receiverUser = receiverUser;
         this.bank = bank;
+        this.output = output;
         this.timestamp = command.getTimestamp();
         this.description = command.getDescription();
     }
@@ -93,6 +98,7 @@ public class SendMoneyTransaction implements TransactionStrategy {
      */
     public void makeTransaction() {
         if (giver == null || receiver == null) {
+            CheckCardStatusTransaction.printError(command, "User not found", timestamp, output);
             return;
         }
 

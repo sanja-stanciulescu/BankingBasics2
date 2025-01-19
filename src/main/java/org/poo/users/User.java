@@ -7,8 +7,11 @@ import org.poo.servicePlan.Plan;
 import org.poo.servicePlan.StandardPlan;
 import org.poo.servicePlan.StudentPlan;
 import org.poo.transactions.TransactionStrategy;
+import org.poo.transactions.split_payment.SplitPaymentTransaction;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.TreeSet;
 
 public class User {
     private String firstName;
@@ -26,6 +29,8 @@ public class User {
     private int numberOfSavingsAccounts;
     @JsonIgnore
     private Plan servicePlan;
+    @JsonIgnore
+    private LinkedList<SplitPaymentTransaction> activeTransactions;
 
     /**
      * Constructs a new {@code User} based on the provided {@code UserInput} object.
@@ -40,6 +45,7 @@ public class User {
         this.occupation = other.getOccupation();
         accounts = new ArrayList<>();
         transactions = new ArrayList<>();
+        activeTransactions = new LinkedList<>();
 
         if (other.getOccupation().equals("student")) {
             servicePlan = new StudentPlan();
@@ -168,5 +174,13 @@ public class User {
 
     public void setServicePlan(Plan servicePlan) {
         this.servicePlan = servicePlan;
+    }
+
+    public LinkedList<SplitPaymentTransaction> getActiveTransactions() {
+        return activeTransactions;
+    }
+
+    public void setActiveTransactions(LinkedList<SplitPaymentTransaction> activeTransactions) {
+        this.activeTransactions = activeTransactions;
     }
 }

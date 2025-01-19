@@ -1,16 +1,27 @@
 package org.poo.transactions;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.accounts.ClassicAccount;
 import org.poo.fileio.CommandInput;
+import org.poo.users.User;
 
 public class AddInterestTransaction implements TransactionStrategy {
-    private CommandInput command;
-    private ClassicAccount account;
-    private ArrayNode output;
+    private double amount;
+    private String currency;
+    private String description;
     private int timestamp;
+
+    @JsonIgnore
+    private CommandInput command;
+    @JsonIgnore
+    private ClassicAccount account;
+    @JsonIgnore
+    private User user;
+    @JsonIgnore
+    private ArrayNode output;
 
     /**
      * Constructs a new {@code AddInterestTransaction} based on the given command,
@@ -24,11 +35,13 @@ public class AddInterestTransaction implements TransactionStrategy {
     public AddInterestTransaction(
             final CommandInput command,
             final ArrayNode output,
+            final User user,
             final ClassicAccount account
     ) {
         this.command = command;
         this.output = output;
         this.account = account;
+        this.user = user;
         this.timestamp = command.getTimestamp();
     }
 
@@ -56,7 +69,13 @@ public class AddInterestTransaction implements TransactionStrategy {
 
             return;
         }
+
+        double initialBalance = account.getBalance();
         account.addInterest();
+        amount = account.getBalance() - initialBalance;
+        currency = account.getCurrency();
+        description = "Interest rate income";
+        user.getTransactions().add(this);
     }
 
     /**
@@ -76,5 +95,29 @@ public class AddInterestTransaction implements TransactionStrategy {
      */
     public void setTimestamp(final int timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

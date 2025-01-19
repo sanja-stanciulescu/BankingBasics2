@@ -58,7 +58,7 @@ public class CheckCardStatusTransaction implements TransactionStrategy {
      */
     public void makeTransaction() {
         if (currentAccount == null || card == null) {
-            printError(command, command.getTimestamp(), output);
+            printError(command, "Card not found", command.getTimestamp(), output);
         } else {
          if (currentAccount.getBalance() <= currentAccount.getMinBalance()) {
              description = "You have reached the minimum amount of funds, the card will be frozen";
@@ -83,6 +83,7 @@ public class CheckCardStatusTransaction implements TransactionStrategy {
      */
     static void printError(
             final CommandInput command,
+            final String description,
             final int timestamp,
             final ArrayNode output
     ) {
@@ -92,7 +93,7 @@ public class CheckCardStatusTransaction implements TransactionStrategy {
         cardNode.put("timestamp", timestamp);
 
         ObjectNode errorNode = mapper.createObjectNode();
-        errorNode.put("description", "Card not found");
+        errorNode.put("description", description);
         errorNode.put("timestamp", command.getTimestamp());
         cardNode.set("output", errorNode);
         output.add(cardNode);

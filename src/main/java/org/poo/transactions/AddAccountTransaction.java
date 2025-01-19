@@ -1,6 +1,7 @@
 package org.poo.transactions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
 import org.poo.accounts.SavingsAccount;
 import org.poo.app.IBANRegistry;
@@ -57,6 +58,10 @@ public class AddAccountTransaction implements TransactionStrategy {
             double interest = command.getInterestRate();
             currentUser.getAccounts().add(new SavingsAccount(iban, currency, "savings", interest));
             currentUser.setNumberOfSavingsAccounts(currentUser.getNumberOfSavingsAccounts() + 1);
+        } else if (command.getAccountType().equals("business")) {
+            iban = Utils.generateIBAN();
+            String currency = command.getCurrency();
+            currentUser.getAccounts().add(new BusinessAccount(iban, currency, "business", currentUser));
         }
         description = "New account created";
         registry.registerIBAN(iban, iban);
