@@ -76,6 +76,7 @@ public class AddInterestTransaction implements TransactionStrategy {
         currency = account.getCurrency();
         description = "Interest rate income";
         user.getTransactions().add(this);
+        account.getTransactions().add(this);
     }
 
     /**

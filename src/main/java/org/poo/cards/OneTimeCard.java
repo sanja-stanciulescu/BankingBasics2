@@ -13,8 +13,8 @@ public class OneTimeCard extends Card {
      *
      * @param cardNumber the unique card number, must not be null or empty.
      */
-    public OneTimeCard(final String cardNumber) {
-        super(cardNumber, "active");
+    public OneTimeCard(final String cardNumber, final String email) {
+        super(cardNumber, email, "active");
     }
 
     /**

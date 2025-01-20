@@ -1,14 +1,11 @@
 package org.poo.business;
 
-import org.poo.accounts.ClassicAccount;
 import org.poo.users.User;
 
-public class Manager {
-    private User user;
-    private ClassicAccount account;
+public class Manager extends Employee {
 
-    public Manager(final User user, final ClassicAccount account) {
-        this.user = user;
-        this.account = account;
+    public Manager(final User user) {
+        super(user);
+        permissions = 1;
     }
 }

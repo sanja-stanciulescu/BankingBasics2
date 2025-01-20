@@ -75,16 +75,6 @@ public class SplitPaymentTransaction implements TransactionStrategy {
                 finder.getUser().getActiveTransactions().addLast(this);
             }
         } else {
-            // It means that somebody rejected the SplitPayment
-            if (!everythingOk) {
-                for (Finder finder : finders) {
-                    error = "One user rejected the payment.";
-                    finder.getUser().getTransactions().add(this);
-                    finder.getUser().getActiveTransactions().remove(this);
-                    finder.getAccount().getTransactions().add(this);
-                }
-            }
-
             currency = command.getCurrency();
             description = "Split payment of " + String.format("%.2f",
                     command.getAmount()) + " " + currency;
@@ -96,6 +86,17 @@ public class SplitPaymentTransaction implements TransactionStrategy {
                 }
             } else {
                 amountForUsers = command.getAmountForUsers();
+            }
+
+            // It means that somebody rejected the SplitPayment
+            if (!everythingOk) {
+                for (Finder finder : finders) {
+                    error = "One user rejected the payment.";
+                    finder.getUser().getTransactions().add(this);
+                    finder.getUser().getActiveTransactions().remove(this);
+                    finder.getAccount().getTransactions().add(this);
+                }
+                return;
             }
 
             checkAccounts(finders, amountForUsers);

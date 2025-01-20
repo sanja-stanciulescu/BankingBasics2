@@ -1,14 +1,16 @@
 package org.poo.transactions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.accounts.ClassicAccount;
 import org.poo.exchangeRates.Bnr;
-import org.poo.exchangeRates.ExchangeRate;
 import org.poo.fileio.CommandInput;
 import org.poo.servicePlan.Plan;
 import org.poo.servicePlan.PlanFactory;
 import org.poo.users.User;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UpgradePlanTransaction implements TransactionStrategy {
     private String accountIBAN;
     private String description;
@@ -25,12 +27,15 @@ public class UpgradePlanTransaction implements TransactionStrategy {
     private Plan newPlan;
     @JsonIgnore
     private Bnr bank;
+    @JsonIgnore
+    private ArrayNode output;
 
-    public UpgradePlanTransaction(CommandInput command, User user, ClassicAccount account, Bnr bank) {
+    public UpgradePlanTransaction(CommandInput command, User user, ClassicAccount account, Bnr bank, ArrayNode output) {
         this.command = command;
         this.user = user;
         this.account = account;
         this.bank = bank;
+        this.output = output;
         this.accountIBAN = command.getAccount();
         this.timestamp = command.getTimestamp();
         this.newPlanType = command.getNewPlanType();
@@ -41,19 +46,23 @@ public class UpgradePlanTransaction implements TransactionStrategy {
     @Override
     public void makeTransaction() {
         if (user == null || account == null) {
-            System.out.println("Account not found for plan upgrade");
+            CheckCardStatusTransaction.printError(command, "Account not found", timestamp, output);
             return;
         }
 
         if (user.getServicePlan().getPlan().equals(newPlanType)) {
             description = "The user already has the " + newPlanType + " plan.";
+            accountIBAN = null;
+            newPlanType = null;
             user.getTransactions().add(this);
+            account.getTransactions().add(this);
             return;
         }
 
         if (user.getServicePlan().getId() > newPlan.getId()) {
             description = "You cannot downgrade your plan.";
             user.getTransactions().add(this);
+            account.getTransactions().add(this);
             return;
         }
 
@@ -81,8 +90,10 @@ public class UpgradePlanTransaction implements TransactionStrategy {
             amount = fee;
         }
 
-        if (account.getBalance() - amount <= account.getMinBalance() && account.getMinBalance() != 0.0) {
+        if (account.getBalance() - amount < account.getMinBalance()) {
             description = "Insufficient funds";
+            accountIBAN = null;
+            newPlanType = null;
         } else {
             account.setBalance(account.getBalance() - amount);
             user.setServicePlan(newPlan);
@@ -90,6 +101,7 @@ public class UpgradePlanTransaction implements TransactionStrategy {
         }
 
         user.getTransactions().add(this);
+        account.getTransactions().add(this);
     }
 
     public String getAccountIBAN() {

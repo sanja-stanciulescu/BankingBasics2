@@ -9,6 +9,8 @@ public class Card {
 
     @JsonIgnore
     private int checkedStatus;
+    @JsonIgnore
+    protected String creatorEmail;
 
     /**
      * Constructs a new {@code Card} with the specified card number and status.
@@ -16,8 +18,9 @@ public class Card {
      * @param cardNumber the unique card number, must not be null or empty.
      * @param status     the status of the card (e.g., "active", "inactive").
      */
-    public Card(final String cardNumber, final String status) {
+    public Card(final String cardNumber,final String email, final String status) {
         this.cardNumber = cardNumber;
+        this.creatorEmail = email;
         this.status = status;
         checkedStatus = 0;
     }
@@ -75,5 +78,13 @@ public class Card {
      */
     public void setStatus(final String status) {
         this.status = status;
+    }
+
+    public String getCreatorEmail() {
+        return creatorEmail;
+    }
+
+    public void setCreatorEmail(String creatorEmail) {
+        this.creatorEmail = creatorEmail;
     }
 }

@@ -1,6 +1,7 @@
 package org.poo.transactions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
 import org.poo.fileio.CommandInput;
 
@@ -24,6 +25,7 @@ public class AddFundsTransaction implements TransactionStrategy {
         this.currentAccount = currentAccount;
         this.command = command;
         timestamp = command.getTimestamp();
+        email = command.getEmail();
     }
 
     /**
@@ -34,6 +36,21 @@ public class AddFundsTransaction implements TransactionStrategy {
             System.out.println("User not found.");
             return;
         }
+
+        if (currentAccount.getType().equals("business")) {
+            BusinessAccount business = (BusinessAccount) currentAccount;
+            if (business.getEmployees().containsKey(email)) {
+                if (command.getAmount() > business.getDepositLimit()) {
+                    return;
+                }
+                business.getEmployees().get(email).setDeposited(business.getEmployees().get(email).getDeposited() + command.getAmount());
+                business.setTotalDeposited(business.getTotalDeposited() + command.getAmount());
+            } else if (business.getManagers().containsKey(email)) {
+                business.getManagers().get(email).setDeposited(business.getManagers().get(email).getDeposited() + command.getAmount());
+                business.setTotalDeposited(business.getTotalDeposited() + command.getAmount());
+            }
+        }
+
         currentAccount.setBalance(currentAccount.getBalance() + command.getAmount());
     }
 

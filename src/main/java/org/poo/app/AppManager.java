@@ -1,6 +1,7 @@
 package org.poo.app;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
 import org.poo.cards.Card;
 import org.poo.commerciants.Seller;
@@ -88,7 +89,7 @@ public class AppManager {
                 break;
             case "addAccount":
                 searchUserByEmail(command.getEmail());
-                transaction = new AddAccountTransaction(command, registry, finder.getUser());
+                transaction = new AddAccountTransaction(command, registry, finder.getUser(), bank);
                 break;
             case "createCard", "createOneTimeCard":
                 searchUserByEmail(command.getEmail());
@@ -166,6 +167,7 @@ public class AppManager {
             case "acceptSplitPayment":
                 searchUserByEmail(command.getEmail());
                 if (finder.getUser() == null) {
+                    CheckCardStatusTransaction.printError(command, "User not found", command.getTimestamp(), output);
                     break;
                 }
                 Command acceptCommand = new AcceptSplitPayment(command.getEmail(),
@@ -178,6 +180,7 @@ public class AppManager {
             case "rejectSplitPayment":
                 searchUserByEmail(command.getEmail());
                 if (finder.getUser() == null) {
+                    CheckCardStatusTransaction.printError(command, "User not found", command.getTimestamp(), output);
                     break;
                 }
                 Command rejectCommand = new RejectSplitPayment(command.getEmail(),
@@ -195,9 +198,17 @@ public class AppManager {
                 searchByIban(command.getAccount());
                 transaction = new SpendingsReportTransaction(command, output, finder.getAccount());
                 break;
+            case "businessReport":
+                searchByIban(command.getAccount());
+                if (command.getType().equals("transaction")) {
+                    transaction = new TransactionBusinessReport(command, (BusinessAccount) finder.getAccount(), output);
+                } else {
+                    System.out.println("Todo");
+                }
+                break;
             case "upgradePlan":
                 searchByIban(command.getAccount());
-                transaction = new UpgradePlanTransaction(command, finder.getUser(), finder.getAccount(), bank);
+                transaction = new UpgradePlanTransaction(command, finder.getUser(), finder.getAccount(), bank, output);
                 break;
             case "cashWithdrawal":
                 searchByCard(command.getCardNumber());
@@ -205,7 +216,22 @@ public class AppManager {
                 break;
             case "addNewBusinessAssociate":
                 searchByIban(command.getAccount());
+                User owner = finder.getUser();
+                BusinessAccount business = (BusinessAccount) finder.getAccount();
+                searchUserByEmail(command.getEmail());
+                transaction = new AddNewBusinessAssociateTransaction(command, owner, business, finder.getUser());
+                break;
+            case "changeSpendingLimit", "changeDepositLimit":
+                searchByIban(command.getAccount());
+                BusinessAccount account;
+                if (finder.getAccount().getType().equals("business")) {
+                    account = (BusinessAccount) finder.getAccount();
+                } else {
+                    break;
+                }
 
+                searchUserByEmail(command.getEmail());
+                transaction = new ChangeSpendingLimitTransaction(command, finder.getUser(), account, output);
                 break;
             default:
                 System.out.println("Invalid command");

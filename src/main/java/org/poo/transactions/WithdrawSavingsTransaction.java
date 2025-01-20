@@ -1,14 +1,19 @@
 package org.poo.transactions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.poo.accounts.ClassicAccount;
 import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
 import org.poo.users.User;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class WithdrawSavingsTransaction implements TransactionStrategy{
     private int timestamp;
     private String description;
+    private String classicAccountIBAN;
+    private String savingsAccountIBAN;
+    private Double amount;
     private static final int CURRENT_YEAR = 2025;
 
     @JsonIgnore
@@ -26,6 +31,9 @@ public class WithdrawSavingsTransaction implements TransactionStrategy{
         this.currentUser = currentUser;
         this.account = account;
         this.timestamp = command.getTimestamp();
+        savingsAccountIBAN = null;
+        classicAccountIBAN = null;
+        amount = null;
     }
 
     @Override
@@ -48,6 +56,7 @@ public class WithdrawSavingsTransaction implements TransactionStrategy{
 
         if (currentUser.getAccounts().size() - currentUser.getNumberOfSavingsAccounts() < 1) {
             description = "You do not have a classic account.";
+            account.getTransactions().add(this);
             currentUser.getTransactions().add(this);
             return;
         }
@@ -60,7 +69,7 @@ public class WithdrawSavingsTransaction implements TransactionStrategy{
 
         ClassicAccount classicAccount = currentUser.getAccounts()
                 .stream()
-                .filter(acc -> acc.getCurrency().equals(command.getCurrency()))
+                .filter(acc -> acc.getCurrency().equals(command.getCurrency()) && acc.getType().equals("classic"))
                 .findFirst().orElse(null);
 
         if (classicAccount == null) {
@@ -82,6 +91,10 @@ public class WithdrawSavingsTransaction implements TransactionStrategy{
         account.setBalance(account.getBalance() - amount);
         classicAccount.setBalance(classicAccount.getBalance() + command.getAmount());
         description = "Savings withdrawal";
+        this.amount = amount;
+        classicAccountIBAN = classicAccount.getIban();
+        savingsAccountIBAN = account.getIban();
+        currentUser.getTransactions().add(this);
         currentUser.getTransactions().add(this);
     }
 
@@ -132,5 +145,29 @@ public class WithdrawSavingsTransaction implements TransactionStrategy{
 
     public void setBank(Bnr bank) {
         this.bank = bank;
+    }
+
+    public String getClassicAccountIBAN() {
+        return classicAccountIBAN;
+    }
+
+    public void setClassicAccountIBAN(String classicAccountIBAN) {
+        this.classicAccountIBAN = classicAccountIBAN;
+    }
+
+    public String getSavingsAccountIBAN() {
+        return savingsAccountIBAN;
+    }
+
+    public void setSavingsAccountIBAN(String savingsAccountIBAN) {
+        this.savingsAccountIBAN = savingsAccountIBAN;
+    }
+
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
     }
 }

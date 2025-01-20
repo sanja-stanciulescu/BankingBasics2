@@ -5,6 +5,7 @@ import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
 import org.poo.accounts.SavingsAccount;
 import org.poo.app.IBANRegistry;
+import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
 import org.poo.users.User;
 import org.poo.utils.Utils;
@@ -19,6 +20,8 @@ public class AddAccountTransaction implements TransactionStrategy {
     private User currentUser;
     @JsonIgnore
     private IBANRegistry registry;
+    @JsonIgnore
+    private Bnr bank;
 
     /**
      * Constructs a new {@code AddAccountTransaction} based on the given command input,
@@ -31,12 +34,14 @@ public class AddAccountTransaction implements TransactionStrategy {
     public AddAccountTransaction(
             final CommandInput command,
             final IBANRegistry registry,
-            final User currentUser
+            final User currentUser,
+            final Bnr bank
     ) {
         this.timestamp = command.getTimestamp();
         this.command = command;
         this.registry = registry;
         this.currentUser = currentUser;
+        this.bank = bank;
     }
 
     /**
@@ -61,11 +66,12 @@ public class AddAccountTransaction implements TransactionStrategy {
         } else if (command.getAccountType().equals("business")) {
             iban = Utils.generateIBAN();
             String currency = command.getCurrency();
-            currentUser.getAccounts().add(new BusinessAccount(iban, currency, "business", currentUser));
+            currentUser.getAccounts().add(new BusinessAccount(iban, currency, "business", currentUser, bank));
         }
         description = "New account created";
         registry.registerIBAN(iban, iban);
         currentUser.getTransactions().add(this);
+        currentUser.getAccounts().getLast().getTransactions().add(this);
     }
 
     /**

@@ -14,10 +14,12 @@ public class Seller {
 
     private Map<ClassicAccount, Integer> numberOfTransactions;
     private CashbackStrategy cashbackStrategy;
+    private String cashbackType;
 
-    public Seller(String commerciant, String type, CashbackStrategy cashbackStrategy) {
+    public Seller(String commerciant, String type, String cashbackType, CashbackStrategy cashbackStrategy) {
         this.commerciant = commerciant;
         this.type = type;
+        this.cashbackType = cashbackType;
         this.cashbackStrategy = cashbackStrategy;
         numberOfTransactions = new HashMap<>();
     }
@@ -25,6 +27,7 @@ public class Seller {
     public Seller(CommerciantInput commerciantInput) {
         this.commerciant = commerciantInput.getCommerciant();
         this.type = commerciantInput.getType();
+        this.cashbackType = commerciantInput.getCashbackStrategy();
         this.id = commerciantInput.getId();
         this.iban = commerciantInput.getAccount();
 
@@ -83,5 +86,13 @@ public class Seller {
 
     public void setNumberOfTransactions(Map<ClassicAccount, Integer> numberOfTransactions) {
         this.numberOfTransactions = numberOfTransactions;
+    }
+
+    public String getCashbackType() {
+        return cashbackType;
+    }
+
+    public void setCashbackType(String cashbackType) {
+        this.cashbackType = cashbackType;
     }
 }

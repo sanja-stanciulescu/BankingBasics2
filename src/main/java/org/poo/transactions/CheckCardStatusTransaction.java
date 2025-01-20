@@ -81,7 +81,7 @@ public class CheckCardStatusTransaction implements TransactionStrategy {
      * @param timestamp the timestamp of the transaction.
      * @param output the output array where the error message will be added.
      */
-    static void printError(
+    public static void printError(
             final CommandInput command,
             final String description,
             final int timestamp,

@@ -96,9 +96,9 @@ public class AddCardTransaction implements TransactionStrategy {
                 String cardNumber = Utils.generateCardNumber();
                 card = cardNumber;
                 if (command.getCommand().equals("createCard")) {
-                    currAccount.getCards().add(new Card(cardNumber, "active"));
+                    currAccount.getCards().add(new Card(cardNumber, command.getEmail(), "active"));
                 } else if (command.getCommand().equals("createOneTimeCard")) {
-                    currAccount.getCards().add(new OneTimeCard(cardNumber));
+                    currAccount.getCards().add(new OneTimeCard(cardNumber, command.getEmail()));
                 }
                     if (currAccount.getType().equals("classic")) {
                     currAccount.getTransactions().add(this);

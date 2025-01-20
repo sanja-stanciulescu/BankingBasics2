@@ -3,6 +3,7 @@ package org.poo.transactions;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
 import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
@@ -117,6 +118,22 @@ public class SendMoneyTransaction implements TransactionStrategy {
                 amount = command.getAmount() * exchangeRate;
             } else {
                 amount = command.getAmount();
+            }
+
+            if (giver.getType().equals("business")) {
+                BusinessAccount business = (BusinessAccount) giver;
+                System.out.println(giverUser.getEmail());
+                if (business.getEmployees().containsKey(command.getEmail())) {
+                    if (amount > business.getSpendingLimit())
+                        return;
+                    double initialAmount = business.getEmployees().get(giverUser.getEmail()).getSpent();
+                    business.getEmployees().get(giverUser.getEmail()).setSpent(initialAmount + amount);
+                    business.setTotalSpent(business.getTotalSpent() + amount);
+                } else if (business.getManagers().containsKey(giverUser.getEmail())) {
+                    double initialAmount = business.getManagers().get(giverUser.getEmail()).getSpent();
+                    business.getManagers().get(giverUser.getEmail()).setSpent(initialAmount + amount);
+                    business.setTotalSpent(business.getTotalSpent() + amount);
+                }
             }
 
             double commission;

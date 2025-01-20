@@ -3,6 +3,7 @@ package org.poo.transactions;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
 import org.poo.cards.Card;
 import org.poo.commerciants.Seller;
@@ -70,7 +71,6 @@ public class PayOnlineTransaction implements TransactionStrategy {
                 if (command.getAmount() == 0.0) {
                     return;
                 }
-
                 String currency = account.getCurrency();
                 double amount;
 
@@ -89,6 +89,13 @@ public class PayOnlineTransaction implements TransactionStrategy {
                     amount = command.getAmount();
                 }
 
+                if (account.getType().equals("business")) {
+                    BusinessAccount business = (BusinessAccount) account;
+                    if (business.getEmployees().containsKey(command.getEmail()) && amount > business.getSpendingLimit()) {
+                        return;
+                    }
+                }
+
                 double coupon = 0.0;
                 if (account.getCoupons().get(seller.getType()) != -1.0 && account.getCoupons().get(seller.getType()) != 0) {
                     coupon = account.getCoupons().get(seller.getType()) * amount;
@@ -96,31 +103,50 @@ public class PayOnlineTransaction implements TransactionStrategy {
                 }
 
                 double commission;
-                double cashback;
                 if (!command.getCurrency().equals("RON")) {
                     double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
                     commission = currentUser.getServicePlan().getComissionRate(command.getAmount() * exchangeRate);
-                    cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount() * exchangeRate);
                 } else {
-                    cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount());
                     commission = currentUser.getServicePlan().getComissionRate(command.getAmount());
                 }
 
-                cashback = cashback * exchangeRate1 + coupon;
-
                 int cardChanged = 0;
 
-                if (account.getBalance() - amount <= account.getMinBalance()) {
+                if (account.getBalance() - amount - commission <= account.getMinBalance()) {
                     description = "Insufficient funds";
                 } else {
+                    double cashback;
+                    if (!command.getCurrency().equals("RON")) {
+                        double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
+                        cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount() * exchangeRate);
+                    } else {
+                        cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount());
+                    }
+
+                    double exchangeRate2 = 1;
+                    if (!currency.equals("RON")) {
+                        exchangeRate2 = bank.getExchangeRate("RON", account.getCurrency());
+                    }
+
+                    cashback = cashback * exchangeRate2 + coupon;
+
                     account.setBalance(account.getBalance() - amount - amount * commission + cashback);
                     this.amount = amount;
                     commerciant = command.getCommerciant();
 
                     if (account.getType().equals("classic")) {
                         account.getCommerciants().getPayments().add(this);
-                    } else {
-                        System.out.println("Not on savings");
+                    } else if (account.getType().equals("business")) {
+                        BusinessAccount business = (BusinessAccount) account;
+                        if (business.getEmployees().containsKey(command.getEmail())) {
+                            double initialAmount = business.getEmployees().get(currentUser.getEmail()).getSpent();
+                            business.getEmployees().get(currentUser.getEmail()).setSpent(initialAmount + amount);
+                            business.setTotalSpent(business.getTotalSpent() + amount);
+                        } else if (business.getManagers().containsKey(command.getEmail())) {
+                            double initialAmount = business.getManagers().get(currentUser.getEmail()).getSpent();
+                            business.getManagers().get(currentUser.getEmail()).setSpent(initialAmount + amount);
+                            business.setTotalSpent(business.getTotalSpent() + amount);
+                        }
                     }
 
                     description = "Card payment";
