@@ -29,10 +29,16 @@ public class ChangeSpendingLimitTransaction implements TransactionStrategy {
     @Override
     public void makeTransaction() {
         if (user != account.getOwner().getUser()) {
-            CheckCardStatusTransaction.printError(command, "You must be owner in order to change spending limit.",
-                    timestamp, output);
+            if (command.getCommand().equals("changeSpendingLimit"))
+                CheckCardStatusTransaction.printError(command, "You must be owner in order to change spending limit.",
+                        timestamp, output);
+            else if (command.getCommand().equals("changeDepositLimit"))
+                CheckCardStatusTransaction.printError(command, "You must be owner in order to change deposit limit.",
+                        timestamp, output);
+
             return;
         }
+
         if (command.getCommand().equals("changeSpendingLimit"))
             account.setSpendingLimit(command.getAmount());
         else if (command.getCommand().equals("changeDepositLimit"))

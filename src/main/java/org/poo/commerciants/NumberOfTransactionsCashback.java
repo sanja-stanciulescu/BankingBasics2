@@ -8,7 +8,18 @@ public class NumberOfTransactionsCashback implements CashbackStrategy {
     @Override
     public double calculateCashback(Seller seller, ClassicAccount account, User user, double transactionAmount) {
         Integer transactions = seller.getNumberOfTransactions().get(account);
+        //System.out.println("Sunt in numberOfTransactions");
 
+        if (seller.getCashbackType().equals("nrOfTransactions")) {
+            if (transactions == null) {
+                transactions = 1;
+            } else {
+                transactions = transactions + 1;
+            }
+        }
+        seller.getNumberOfTransactions().put(account, transactions);
+
+        //System.out.println("S-au facut la " + seller.getCommerciant() + " " + transactions + " tranzactii");
         if (transactions == null) {
             return 0;
         }

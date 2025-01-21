@@ -22,6 +22,10 @@ public class AddNewBusinessAssociateTransaction implements TransactionStrategy {
     private User user;
     @JsonIgnore
     private CommandInput command;
+    @JsonIgnore
+    private int employeeOrder;
+    @JsonIgnore
+    private int managerOrder;
 
     public AddNewBusinessAssociateTransaction(final CommandInput command, final User businessOwner, final BusinessAccount account, final User user) {
         this.command = command;
@@ -30,23 +34,29 @@ public class AddNewBusinessAssociateTransaction implements TransactionStrategy {
         this.businessAccount = account;
         timestamp = command.getTimestamp();
         error = null;
+        employeeOrder = 0;
+        managerOrder = 0;
     }
 
     @Override
     public void makeTransaction() {
         if (command.getRole().equals("employee")) {
-            if (businessAccount.getEmployees().containsKey(user.getEmail())) {
+            if (businessAccount.getManagers().containsKey(user.getEmail()) || businessAccount.getOwner().getUser() == user) {
                 error = "The user is already an associate of the account.";
             } else {
-                businessAccount.getEmployees().put(user.getEmail(), new Employee(user));
+                employeeOrder = businessAccount.getEmployees().size();
+                businessAccount.getEmployees().put(user.getEmail(), new Employee(user, employeeOrder));
                 user.getAccounts().add(businessAccount);
+                employeeOrder++;
             }
         } else if (command.getRole().equals("manager")) {
-            if (businessAccount.getManagers().containsKey(user.getEmail())) {
+            if (businessAccount.getEmployees().containsKey(user.getEmail()) || businessAccount.getOwner().getUser() == user) {
                 error = "The user is already an associate of the account.";
             } else {
-                businessAccount.getManagers().put(user.getEmail(), new Manager(user));
+                managerOrder = businessAccount.getManagers().size();
+                businessAccount.getManagers().put(user.getEmail(), new Manager(user, managerOrder));
                 user.getAccounts().add(businessAccount);
+                managerOrder++;
             }
         }
     }

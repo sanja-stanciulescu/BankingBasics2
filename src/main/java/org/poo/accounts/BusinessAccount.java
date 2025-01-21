@@ -1,7 +1,7 @@
 package org.poo.accounts;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.poo.business.BusinessCommerciant;
 import org.poo.business.Employee;
 import org.poo.business.Manager;
 import org.poo.business.Owner;
@@ -12,15 +12,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BusinessAccount extends ClassicAccount {
-    @JsonProperty("deposit limit")
+    @JsonIgnore
     private double depositLimit;
+    @JsonIgnore
     private Map<String,Employee> employees;
+    @JsonIgnore
     private Map<String, Manager> managers;
-    @JsonProperty("spending limit")
+    @JsonIgnore
+    private Map<String, BusinessCommerciant> businessCommerciants;
+    @JsonIgnore
     private double spendingLimit;
-    @JsonProperty("total deposited")
+    @JsonIgnore
     private double totalDeposited;
-    @JsonProperty("total spent")
+    @JsonIgnore
     private double totalSpent;
 
     @JsonIgnore
@@ -37,6 +41,7 @@ public class BusinessAccount extends ClassicAccount {
         super(iban, currency, type);
         this.employees = new HashMap<>();
         this.managers = new HashMap<>();
+        this.businessCommerciants = new HashMap<>();
         this.owner = new Owner(user, this);
         this.bank = bank;
 
@@ -44,6 +49,9 @@ public class BusinessAccount extends ClassicAccount {
             double exchangeRate = bank.getExchangeRate("RON", currency);
             spendingLimit = exchangeRate * 500;
             depositLimit = exchangeRate * 500;
+        } else {
+            spendingLimit = 500;
+            depositLimit = 500;
         }
     }
 
@@ -101,5 +109,13 @@ public class BusinessAccount extends ClassicAccount {
 
     public void setOwner(Owner owner) {
         this.owner = owner;
+    }
+
+    public Map<String, BusinessCommerciant> getBusinessCommerciants() {
+        return businessCommerciants;
+    }
+
+    public void setBusinessCommerciants(Map<String, BusinessCommerciant> businessCommerciants) {
+        this.businessCommerciants = businessCommerciants;
     }
 }

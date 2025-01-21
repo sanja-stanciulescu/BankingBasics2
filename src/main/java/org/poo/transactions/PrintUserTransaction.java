@@ -3,6 +3,9 @@ package org.poo.transactions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.poo.accounts.BusinessAccount;
+import org.poo.accounts.ClassicAccount;
+import org.poo.cards.Card;
 import org.poo.fileio.CommandInput;
 import org.poo.users.User;
 
@@ -46,7 +49,35 @@ public class PrintUserTransaction implements TransactionStrategy {
 
         ArrayNode usersArray = mapper.createArrayNode();
         for (User user : allUsers) {
-            ObjectNode userNode = mapper.convertValue(user, ObjectNode.class);
+            ObjectNode userNode = mapper.createObjectNode();
+
+            userNode.put("firstName", user.getFirstName());
+            userNode.put("lastName", user.getLastName());
+            userNode.put("email", user.getEmail());
+
+            ArrayNode accountsArray = mapper.createArrayNode();
+            for (ClassicAccount account : user.getAccounts()) {
+                if (account.getType().equals("business")) {
+                    BusinessAccount business = (BusinessAccount) account;
+                    if (business.getOwner().getUser() != user)
+                        continue;
+                }
+                ObjectNode accountNode = mapper.createObjectNode();
+                accountNode.put("IBAN", account.getIban());
+                accountNode.put("balance", account.getBalance());
+                accountNode.put("currency", account.getCurrency());
+                accountNode.put("type", account.getType());
+
+                ArrayNode cardsArray = mapper.createArrayNode();
+                for (Card card : account.getCards()) {
+                    ObjectNode cardNode = mapper.convertValue(card, ObjectNode.class);
+                    cardsArray.add(cardNode);
+                }
+                accountNode.set("cards", cardsArray);
+                accountsArray.add(accountNode);
+            }
+            userNode.set("accounts", accountsArray);
+
             usersArray.add(userNode);
         }
         printUsersNode.set("output", usersArray);

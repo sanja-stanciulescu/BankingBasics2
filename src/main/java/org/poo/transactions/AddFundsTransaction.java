@@ -49,6 +49,11 @@ public class AddFundsTransaction implements TransactionStrategy {
                 business.getManagers().get(email).setDeposited(business.getManagers().get(email).getDeposited() + command.getAmount());
                 business.setTotalDeposited(business.getTotalDeposited() + command.getAmount());
             }
+            if (!business.getManagers().containsKey(email)
+                    && !business.getEmployees().containsKey(email)
+                    && !business.getOwner().getUser().getEmail().equals(email)) {
+                return;
+            }
         }
 
         currentAccount.setBalance(currentAccount.getBalance() + command.getAmount());

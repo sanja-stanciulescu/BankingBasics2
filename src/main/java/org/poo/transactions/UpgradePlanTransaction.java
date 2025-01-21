@@ -29,18 +29,32 @@ public class UpgradePlanTransaction implements TransactionStrategy {
     private Bnr bank;
     @JsonIgnore
     private ArrayNode output;
+    @JsonIgnore
+    private int automatic;
 
-    public UpgradePlanTransaction(CommandInput command, User user, ClassicAccount account, Bnr bank, ArrayNode output) {
+    public UpgradePlanTransaction(
+            final CommandInput command,
+            final User user,
+            final ClassicAccount account,
+            final Bnr bank,
+            final ArrayNode output,
+            final int automatic) {
         this.command = command;
         this.user = user;
         this.account = account;
         this.bank = bank;
         this.output = output;
+        this.automatic = automatic;
         this.accountIBAN = command.getAccount();
         this.timestamp = command.getTimestamp();
         this.newPlanType = command.getNewPlanType();
         newPlan = PlanFactory.createPlan(newPlanType);
-        description = null;
+        if (automatic == 0)
+            description = null;
+        else {
+            user.setServicePlan(newPlan);
+            description = "Upgrade plan";
+        }
     }
 
     @Override
@@ -95,7 +109,8 @@ public class UpgradePlanTransaction implements TransactionStrategy {
             accountIBAN = null;
             newPlanType = null;
         } else {
-            account.setBalance(account.getBalance() - amount);
+            if (automatic == 0)
+                account.setBalance(account.getBalance() - amount);
             user.setServicePlan(newPlan);
             description = "Upgrade plan";
         }

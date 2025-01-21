@@ -65,7 +65,7 @@ public class CheckCardStatusTransaction implements TransactionStrategy {
              timestamp = command.getTimestamp();
              card.setStatus("frozen");
              user.getTransactions().add(this);
-         } else if (currentAccount.getBalance() - currentAccount.getMinBalance() <= 30) {
+         } else if (currentAccount.getBalance() - currentAccount.getMinBalance() <= 30 && currentAccount.getMinBalance() != 0) {
              description = "The card is in a warning stage";
              timestamp = command.getTimestamp();
              card.setStatus("warning");

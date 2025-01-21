@@ -124,10 +124,15 @@ public class AppManager {
                                                         finder.getUser());
                 break;
             case "sendMoney":
-                searchByIban(command.getAccount());
+                searchByIban(registry.getIBAN(command.getAccount()));
                 currentAccount = finder.getAccount();
                 currentUser = finder.getUser();
                 searchByIban(registry.getIBAN(command.getReceiver()));
+                if (finder.getAccount() == null || finder.getUser() == null) {
+                    Seller seller = searchForCommerciant(command.getReceiver());
+                    transaction = new SendMoneyToCommerciantTransaction(command, currentAccount, currentUser, seller, bank, output);
+                    break;
+                }
                 transaction = new SendMoneyTransaction(command, currentAccount, currentUser,
                                                        finder.getAccount(), finder.getUser(), bank, output);
                 break;
@@ -203,14 +208,18 @@ public class AppManager {
                 if (command.getType().equals("transaction")) {
                     transaction = new TransactionBusinessReport(command, (BusinessAccount) finder.getAccount(), output);
                 } else {
-                    System.out.println("Todo");
+                    transaction = new CommerciantBusinessReport(command, (BusinessAccount) finder.getAccount(), output);
                 }
                 break;
             case "upgradePlan":
                 searchByIban(command.getAccount());
-                transaction = new UpgradePlanTransaction(command, finder.getUser(), finder.getAccount(), bank, output);
+                transaction = new UpgradePlanTransaction(command, finder.getUser(), finder.getAccount(), bank, output, 0);
                 break;
             case "cashWithdrawal":
+                if (command.getEmail().isEmpty()) {
+                    CheckCardStatusTransaction.printError(command, "User not found", command.getTimestamp(), output);
+                    break;
+                }
                 searchByCard(command.getCardNumber());
                 transaction = new CashWithdrawTransaction(command, finder.getUser(), finder.getAccount(), finder.getCard(), output, bank);
                 break;
@@ -223,10 +232,11 @@ public class AppManager {
                 break;
             case "changeSpendingLimit", "changeDepositLimit":
                 searchByIban(command.getAccount());
-                BusinessAccount account;
+                BusinessAccount account = null;
                 if (finder.getAccount().getType().equals("business")) {
                     account = (BusinessAccount) finder.getAccount();
                 } else {
+                    CheckCardStatusTransaction.printError(command, "This is not a business account", command.getTimestamp(), output);
                     break;
                 }
 
@@ -299,5 +309,14 @@ public class AppManager {
         finder.setUser(null);
         finder.setAccount(null);
         finder.setCard(null);
+    }
+
+    private Seller searchForCommerciant(final String iban) {
+        for (Map.Entry<String, Seller> entry : allSellers.entrySet()) {
+            if (entry.getValue().getIban().equals(iban)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.accounts.BusinessAccount;
+import org.poo.business.BusinessCommerciant;
 import org.poo.business.Employee;
 import org.poo.business.Manager;
 import org.poo.fileio.CommandInput;
@@ -14,13 +15,13 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-public class TransactionBusinessReport implements TransactionStrategy{
+public class CommerciantBusinessReport implements TransactionStrategy {
     private CommandInput command;
     private BusinessAccount account;
     private ArrayNode output;
     private int timestamp;
 
-    public TransactionBusinessReport(CommandInput command, BusinessAccount account, ArrayNode output) {
+    public CommerciantBusinessReport(CommandInput command, BusinessAccount account, ArrayNode output) {
         this.command = command;
         this.account = account;
         this.output = output;
@@ -54,44 +55,18 @@ public class TransactionBusinessReport implements TransactionStrategy{
         outputNode.put("IBAN", account.getIban());
         outputNode.put("deposit limit", account.getDepositLimit());
         outputNode.put("spending limit", account.getSpendingLimit());
-        outputNode.put("statistics type", "transaction");
-        outputNode.put("total deposited", account.getTotalDeposited());
-        outputNode.put("total spent", account.getTotalSpent());
+        outputNode.put("statistics type", "commerciant");
 
-        ArrayNode employeesNode = mapper.createArrayNode();
-        List<Employee> sortedEmployees = account.getEmployees().values()
-                .stream().collect(Collectors.toCollection(() -> new TreeSet<Employee>((e1, e2) -> {
-                    if (e1.getOrder() > e2.getOrder()) {
-                        return 1;
-                    } else if (e1.getOrder() < e2.getOrder()) {
-                        return -1;
-                    }
-                    return 0;
-                })))
+        ArrayNode commerciantsNode = mapper.createArrayNode();
+        List<BusinessCommerciant> sortedEmployees = account.getBusinessCommerciants().values()
+                .stream().collect(Collectors.toCollection(() -> new TreeSet<BusinessCommerciant>(Comparator.comparing(BusinessCommerciant::getCommerciant))))
                 .stream().toList();
-        for (Employee employee : sortedEmployees) {
-            ObjectNode employeeNode = mapper.convertValue(employee, ObjectNode.class);
-            employeesNode.add(employeeNode);
+        for (BusinessCommerciant comm : sortedEmployees) {
+            ObjectNode employeeNode = mapper.convertValue(comm, ObjectNode.class);
+            commerciantsNode.add(employeeNode);
         }
 
-        ArrayNode managersNode = mapper.createArrayNode();
-        List<Manager> sortedManagers = account.getManagers().values()
-                .stream().collect(Collectors.toCollection(() -> new TreeSet<Manager>((m1, m2) -> {
-                    if (m1.getOrder() > m2.getOrder()) {
-                        return 1;
-                    } else if (m1.getOrder() < m2.getOrder()) {
-                        return -1;
-                    }
-                    return 0;
-                })))
-                .stream().toList();
-        for (Manager manager : sortedManagers) {
-            ObjectNode managerNode = mapper.convertValue(manager, ObjectNode.class);
-            managersNode.add(managerNode);
-        }
-
-        outputNode.set("employees", employeesNode);
-        outputNode.set("managers", managersNode);
+        outputNode.set("commerciants", commerciantsNode);
         node.set("output", outputNode);
 
         output.add(node);

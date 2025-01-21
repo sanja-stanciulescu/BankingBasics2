@@ -3,8 +3,9 @@ package org.poo.servicePlan;
 public class SilverPlan implements Plan {
     @Override
     public double getComissionRate(double amount) {
+        System.out.println("Suma cu care se calculeaza comisionul e " + amount);
         if (Double.compare(amount, 500.0) >= 0)
-            return 0.1 / 100;
+            return 0.001;
         return 0;
     }
 

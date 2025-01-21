@@ -12,9 +12,12 @@ public class Employee {
     protected User user;
     @JsonIgnore
     protected int permissions;
+    @JsonIgnore
+    private int order;
 
-    public Employee(final User user) {
+    public Employee(final User user, final int order) {
         this.user = user;
+        this.order = order;
         deposited = 0.0;
         spent = 0.0;
         username = user.getLastName() + " " + user.getFirstName();
@@ -59,5 +62,13 @@ public class Employee {
 
     public void setPermissions(int permissions) {
         this.permissions = permissions;
+    }
+
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
     }
 }

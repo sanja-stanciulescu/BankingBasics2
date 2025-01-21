@@ -1,6 +1,7 @@
 package org.poo.transactions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
 import org.poo.fileio.CommandInput;
 import org.poo.users.User;
@@ -37,6 +38,7 @@ public class DeleteCardTransaction implements TransactionStrategy {
         this.command = command;
         this.currentAccount = currentAccount;
         this.currentUser = currentUser;
+        email = command.getEmail();
         this.timestamp = command.getTimestamp();
     }
 
@@ -75,6 +77,24 @@ public class DeleteCardTransaction implements TransactionStrategy {
             if (idx == -1) {
                 System.out.println("Card not found");
             } else {
+                email = command.getEmail();
+                if (currentAccount.getType().equals("business")) {
+                    BusinessAccount business = (BusinessAccount) currentAccount;
+                    if (business.getEmployees().containsKey(currentUser.getEmail())) {
+                        if (!currentAccount.getCards().get(idx).getCreatorEmail().equals(email)) {
+                            description = "You are not authorized to make this transaction.";
+                            return;
+                        }
+                    }
+                }
+                if (!currentAccount.getCards().get(idx).getCreatorEmail().equals(email)) {
+                    return;
+                }
+
+                if (currentAccount.getBalance() != 0) {
+                    return;
+                }
+
                 currentAccount.getCards().remove(idx);
                 if (currentUser != null) {
                     currentUser.getTransactions().add(this);

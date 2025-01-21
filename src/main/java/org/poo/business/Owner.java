@@ -10,7 +10,7 @@ public class Owner extends Employee {
 
 
     public Owner(User user, BusinessAccount account) {
-        super(user);
+        super(user, 100);
         this.account = account;
         permissions = 2;
     }

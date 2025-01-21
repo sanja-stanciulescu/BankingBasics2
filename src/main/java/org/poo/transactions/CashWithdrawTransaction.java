@@ -44,7 +44,14 @@ public class CashWithdrawTransaction implements TransactionStrategy {
     public void makeTransaction() {
         if (user == null || account == null || card == null) {
             CheckCardStatusTransaction.printError(commandInput, "Card not found", timestamp, output);
+        } else if (commandInput.getEmail() == null) {
+            CheckCardStatusTransaction.printError(commandInput, "User not found", timestamp, output);
         } else {
+            if (!account.getType().equals("business") && !card.getCreatorEmail().equals(commandInput.getEmail())) {
+                CheckCardStatusTransaction.printError(commandInput, "Card not found", timestamp, output);
+                return;
+            }
+
             if (card.getStatus().equals("frozen")) {
                 description = "The card is frozen";
                 user.getTransactions().add(this);

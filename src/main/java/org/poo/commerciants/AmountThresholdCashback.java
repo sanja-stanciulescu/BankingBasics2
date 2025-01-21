@@ -7,6 +7,7 @@ public class AmountThresholdCashback implements CashbackStrategy{
     @Override
     public double calculateCashback(Seller seller, ClassicAccount account, User user, double transactionAmount) {
         double totalSpent = account.getTotalSpentPerCommerciant() + transactionAmount;
+        System.out.println("Total spent is " + totalSpent);
         double cashback = 0.0;
         if (totalSpent >= 500) {
             if (user.getServicePlan().getPlan().equals("standard") || user.getServicePlan().getPlan().equals("student")) {

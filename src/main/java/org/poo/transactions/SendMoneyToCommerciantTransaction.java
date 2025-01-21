@@ -1,16 +1,16 @@
 package org.poo.transactions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
+import org.poo.business.BusinessCommerciant;
+import org.poo.commerciants.Seller;
 import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
 import org.poo.users.User;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class SendMoneyTransaction implements TransactionStrategy {
+public class SendMoneyToCommerciantTransaction implements  TransactionStrategy {
     private String description;
     private int timestamp;
     private String senderIBAN;
@@ -23,9 +23,7 @@ public class SendMoneyTransaction implements TransactionStrategy {
     @JsonIgnore
     private User giverUser;
     @JsonIgnore
-    private ClassicAccount receiver;
-    @JsonIgnore
-    private User receiverUser;
+    private Seller receiver;
     @JsonIgnore
     private Bnr bank;
     @JsonIgnore
@@ -41,15 +39,13 @@ public class SendMoneyTransaction implements TransactionStrategy {
      * @param giver the sender's account.
      * @param giverUser the sender's user information.
      * @param receiver the receiver's account.
-     * @param receiverUser the receiver's user information.
      * @param bank the bank used for currency exchange.
      */
-    public SendMoneyTransaction(
+    public SendMoneyToCommerciantTransaction(
             final CommandInput command,
             final ClassicAccount giver,
             final User giverUser,
-            final ClassicAccount receiver,
-            final User receiverUser,
+            final Seller receiver,
             final Bnr bank,
             final ArrayNode output
     ) {
@@ -57,7 +53,6 @@ public class SendMoneyTransaction implements TransactionStrategy {
         this.giver = giver;
         this.giverUser = giverUser;
         this.receiver = receiver;
-        this.receiverUser = receiverUser;
         this.bank = bank;
         this.output = output;
         this.timestamp = command.getTimestamp();
@@ -75,7 +70,7 @@ public class SendMoneyTransaction implements TransactionStrategy {
      * @param amount the amount to be transferred.
      * @param transferType the type of transfer ("sent" or "received").
      */
-    public SendMoneyTransaction(
+    public SendMoneyToCommerciantTransaction(
             final String description,
             final int timestamp,
             final String senderIBAN,
@@ -111,31 +106,19 @@ public class SendMoneyTransaction implements TransactionStrategy {
             amount = command.getAmount() + " " + giver.getCurrency();
             transferType = "sent";
 
-            double amount;
-            if (!giver.getCurrency().equals(receiver.getCurrency())) {
-                double exchangeRate = bank.getExchangeRate(giver.getCurrency(),
-                        receiver.getCurrency());
-                amount = command.getAmount() * exchangeRate;
-            } else {
-                amount = command.getAmount();
-            }
+            double amount = command.getAmount();
 
             if (giver.getType().equals("business")) {
                 BusinessAccount business = (BusinessAccount) giver;
-                System.out.println(giverUser.getEmail());
-                if (business.getEmployees().containsKey(command.getEmail())) {
-                    if (amount > business.getSpendingLimit()) {
-                        giverUser.getTransactions().remove(this);
-                        return;
-                    }
-                    double initialAmount = business.getEmployees().get(giverUser.getEmail()).getSpent();
-                    business.getEmployees().get(giverUser.getEmail()).setSpent(initialAmount + amount);
-                    business.setTotalSpent(business.getTotalSpent() + amount);
-                } else if (business.getManagers().containsKey(giverUser.getEmail())) {
-                    double initialAmount = business.getManagers().get(giverUser.getEmail()).getSpent();
-                    business.getManagers().get(giverUser.getEmail()).setSpent(initialAmount + amount);
-                    business.setTotalSpent(business.getTotalSpent() + amount);
+                if (business.getEmployees().containsKey(command.getEmail()) && amount > business.getSpendingLimit()) {
+                    return;
                 }
+            }
+
+            double coupon = 0.0;
+            if (giver.getCoupons().get(receiver.getType()) != -1.0 && giver.getCoupons().get(receiver.getType()) != 0) {
+                coupon = giver.getCoupons().get(receiver.getType()) * amount;
+                giver.getCoupons().put(receiver.getType(), -1.0);
             }
 
             double commission;
@@ -146,25 +129,79 @@ public class SendMoneyTransaction implements TransactionStrategy {
                 commission = giverUser.getServicePlan().getComissionRate(command.getAmount());
             }
 
-            giver.setBalance(giver.getBalance() - command.getAmount() - commission * command.getAmount());
-            receiver.setBalance(receiver.getBalance() + amount);
-            TransactionStrategy trans = new SendMoneyTransaction(description, timestamp,
-                    senderIBAN, receiverIBAN,
-                    amount + " " + receiver.getCurrency(),
-                    "received");
-            receiverUser.getTransactions().add(trans);
-            receiver.getTransactions().add(trans);
+            if (giver.getBalance() - amount - commission <= giver.getMinBalance()) {
+                description = "Insufficient funds";
+                return;
+            }
+
+            double cashback;
+            if (!giver.getCurrency().equals("RON")) {
+                double exchangeRate = bank.getExchangeRate(giver.getCurrency(), "RON");
+                cashback = receiver.getCashbackStrategy().calculateCashback(receiver, giver, giverUser, command.getAmount() * exchangeRate);
+            } else {
+                cashback = receiver.getCashbackStrategy().calculateCashback(receiver, giver, giverUser, command.getAmount());
+            }
+
+            double exchangeRate2 = 1;
+            if (!giver.getCurrency().equals("RON")) {
+                exchangeRate2 = bank.getExchangeRate("RON", giver.getCurrency());
+            }
+
+            cashback = cashback * exchangeRate2 + coupon;
+
+            if (giver.getType().equals("business")) {
+                BusinessAccount business = (BusinessAccount) giver;
+                System.out.println(giverUser.getEmail());
+                if (business.getEmployees().containsKey(command.getEmail())) {
+                    if (amount + commission > business.getSpendingLimit())
+                        return;
+                    double initialAmount = business.getEmployees().get(giverUser.getEmail()).getSpent();
+                    business.getEmployees().get(giverUser.getEmail()).setSpent(initialAmount + amount);
+                    business.setTotalSpent(business.getTotalSpent() + amount);
+
+                    business.getBusinessCommerciants().putIfAbsent(receiver.getCommerciant(), new BusinessCommerciant(receiver.getCommerciant()));
+
+                    BusinessCommerciant comm = business.getBusinessCommerciants().get(receiver.getCommerciant());
+                    comm.getEmployees().add(business.getEmployees().get(giverUser.getEmail()).getUsername());
+                    comm.setTotalReceived(comm.getTotalReceived() + amount);
+                } else if (business.getManagers().containsKey(giverUser.getEmail())) {
+                    double initialAmount = business.getManagers().get(giverUser.getEmail()).getSpent();
+                    business.getManagers().get(giverUser.getEmail()).setSpent(initialAmount + amount);
+                    business.setTotalSpent(business.getTotalSpent() + amount);
+
+                    business.getBusinessCommerciants().putIfAbsent(receiver.getCommerciant(), new BusinessCommerciant(receiver.getCommerciant()));
+
+                    BusinessCommerciant comm = business.getBusinessCommerciants().get(receiver.getCommerciant());
+                    comm.getManagers().add(business.getManagers().get(giverUser.getEmail()).getUsername());
+                    comm.setTotalReceived(comm.getTotalReceived() + amount);
+                }
+            }
+
+            giver.setBalance(giver.getBalance() - command.getAmount() - commission * command.getAmount() + cashback);
+
+            if (amount / exchangeRate2 + amount * commission / exchangeRate2 > 300 && giverUser.getBigTransactions() < 5)
+                giverUser.setBigTransactions(giverUser.getBigTransactions() + 1);
         }
 
         if (giver.getType().equals("business")) {
             BusinessAccount business = (BusinessAccount) giver;
             if (business.getOwner().getUser() == giverUser) {
                 giverUser.getTransactions().add(this);
+                if (giverUser.getBigTransactions() == 5 && giverUser.getServicePlan().getPlan().equals("silver")) {
+                    giverUser.setBigTransactions(6);
+                    command.setAccount(giver.getIban());
+                    command.setNewPlanType("gold");
+                    giverUser.getTransactions().add(new UpgradePlanTransaction(command, giverUser, giver, bank, output, 1));
+                }
             }
-        } else if (giverUser.getEmail().equals(receiverUser.getEmail())) {
-            giverUser.getTransactions().add(giverUser.getTransactions().size() - 1, this);
         } else {
             giverUser.getTransactions().add(this);
+            if (giverUser.getBigTransactions() == 5 && giverUser.getServicePlan().getPlan().equals("silver")) {
+                giverUser.setBigTransactions(6);
+                command.setAccount(giver.getIban());
+                command.setNewPlanType("gold");
+                giverUser.getTransactions().add(new UpgradePlanTransaction(command, giverUser, giver, bank, output, 1));
+            }
         }
 
         if (giver.getType().equals("classic")) {
@@ -213,7 +250,7 @@ public class SendMoneyTransaction implements TransactionStrategy {
      *
      * @return the receiver's account.
      */
-    public ClassicAccount getReceiver() {
+    public Seller getReceiver() {
         return receiver;
     }
 
@@ -222,7 +259,7 @@ public class SendMoneyTransaction implements TransactionStrategy {
      *
      * @param receiver the receiver's account to set.
      */
-    public void setReceiver(final ClassicAccount receiver) {
+    public void setReceiver(final Seller receiver) {
         this.receiver = receiver;
     }
 

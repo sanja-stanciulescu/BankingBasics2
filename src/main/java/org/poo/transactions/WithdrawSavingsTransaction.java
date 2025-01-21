@@ -75,6 +75,7 @@ public class WithdrawSavingsTransaction implements TransactionStrategy{
         if (classicAccount == null) {
             description = "You do not have a classic account.";
             currentUser.getTransactions().add(this);
+            account.getTransactions().add(this);
             return;
         }
 
@@ -88,6 +89,8 @@ public class WithdrawSavingsTransaction implements TransactionStrategy{
             amount = command.getAmount();
         }
 
+        if (account.getBalance() - amount < 0)
+            return;
         account.setBalance(account.getBalance() - amount);
         classicAccount.setBalance(classicAccount.getBalance() + command.getAmount());
         description = "Savings withdrawal";

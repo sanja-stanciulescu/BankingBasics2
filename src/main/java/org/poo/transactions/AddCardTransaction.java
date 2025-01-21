@@ -33,6 +33,7 @@ public class AddCardTransaction implements TransactionStrategy {
         this.command = command;
         this.currentUser = currentUser;
         timestamp = command.getTimestamp();
+        email = command.getEmail();
     }
 
     /**

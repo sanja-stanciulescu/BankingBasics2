@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.accounts.BusinessAccount;
 import org.poo.accounts.ClassicAccount;
+import org.poo.business.BusinessCommerciant;
 import org.poo.cards.Card;
 import org.poo.commerciants.Seller;
 import org.poo.exchangeRates.Bnr;
@@ -62,6 +63,7 @@ public class PayOnlineTransaction implements TransactionStrategy {
      * transaction history.
      */
     public void makeTransaction() {
+        System.out.println("Pay online at " + timestamp);
         ClassicAccount account = pickCard(command.getCardNumber());
             if (account == null) {
                 CheckCardStatusTransaction.printError(command, "Card not found", timestamp, output);
@@ -74,12 +76,13 @@ public class PayOnlineTransaction implements TransactionStrategy {
                 String currency = account.getCurrency();
                 double amount;
 
+                System.out.println("User is " + command.getEmail());
                 if (description != null) {
                     currentUser.getTransactions().add(this);
                     return;
                 }
 
-                double exchangeRate1 = 1;
+                double exchangeRate1;
                 if (!currency.equals(command.getCurrency())) {
                     exchangeRate1 = bank.getExchangeRate(command.getCurrency(), currency);
                     bank.getExchangeRates().add(new ExchangeRate(command.getCurrency(),
@@ -89,6 +92,8 @@ public class PayOnlineTransaction implements TransactionStrategy {
                     amount = command.getAmount();
                 }
 
+                System.out.println("Amount is " + amount);
+
                 if (account.getType().equals("business")) {
                     BusinessAccount business = (BusinessAccount) account;
                     if (business.getEmployees().containsKey(command.getEmail()) && amount > business.getSpendingLimit()) {
@@ -97,30 +102,55 @@ public class PayOnlineTransaction implements TransactionStrategy {
                 }
 
                 double coupon = 0.0;
+                System.out.println("Valoarea in hash este de " + account.getCoupons().get(seller.getType()));
                 if (account.getCoupons().get(seller.getType()) != -1.0 && account.getCoupons().get(seller.getType()) != 0) {
                     coupon = account.getCoupons().get(seller.getType()) * amount;
                     account.getCoupons().put(seller.getType(), -1.0);
                 }
 
+                System.out.println("Coupon is " + coupon);
+
                 double commission;
-                if (!command.getCurrency().equals("RON")) {
+                if (!account.getCurrency().equals("RON")) {
                     double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
-                    commission = currentUser.getServicePlan().getComissionRate(command.getAmount() * exchangeRate);
+                    if (account.getType().equals("business")) {
+                        BusinessAccount business = (BusinessAccount) account;
+                        commission = business.getOwner().getUser().getServicePlan().getComissionRate(amount * exchangeRate);
+                    } else {
+                        commission = currentUser.getServicePlan().getComissionRate(amount * exchangeRate);
+                    }
                 } else {
-                    commission = currentUser.getServicePlan().getComissionRate(command.getAmount());
+                    if (account.getType().equals("business")) {
+                        BusinessAccount business = (BusinessAccount) account;
+                        commission = business.getOwner().getUser().getServicePlan().getComissionRate(amount);
+                    } else {
+                        commission = currentUser.getServicePlan().getComissionRate(amount);
+                    }
                 }
+
+                System.out.println("Commission is " + commission * amount + " pentru cont de tipul " + currentUser.getServicePlan().getPlan());
 
                 int cardChanged = 0;
 
-                if (account.getBalance() - amount - commission <= account.getMinBalance()) {
+                if (account.getBalance() - amount - commission * amount <= account.getMinBalance()) {
                     description = "Insufficient funds";
                 } else {
                     double cashback;
-                    if (!command.getCurrency().equals("RON")) {
+                    if (!account.getCurrency().equals("RON")) {
                         double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
-                        cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount() * exchangeRate);
+                        if (account.getType().equals("business")) {
+                            BusinessAccount business = (BusinessAccount) account;
+                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, business.getOwner().getUser(), amount * exchangeRate);
+                        } else {
+                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, amount * exchangeRate);
+                        }
                     } else {
-                        cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, command.getAmount());
+                        if (account.getType().equals("business")) {
+                            BusinessAccount business = (BusinessAccount) account;
+                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, business.getOwner().getUser(), amount);
+                        } else {
+                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, amount);
+                        }
                     }
 
                     double exchangeRate2 = 1;
@@ -128,9 +158,19 @@ public class PayOnlineTransaction implements TransactionStrategy {
                         exchangeRate2 = bank.getExchangeRate("RON", account.getCurrency());
                     }
 
+
                     cashback = cashback * exchangeRate2 + coupon;
+                    System.out.println("Account has currency " + currency);
+                    System.out.println("Cashback is " + cashback);
+                    System.out.println("Type is " + seller.getCashbackType() + "\n");
 
                     account.setBalance(account.getBalance() - amount - amount * commission + cashback);
+
+                    if (amount / exchangeRate2 + amount * commission / exchangeRate2 >= 300 && currentUser.getBigTransactions() < 5)
+                        currentUser.setBigTransactions(currentUser.getBigTransactions() + 1);
+
+                    System.out.println("Userul " + currentUser.getEmail() + " are " + currentUser.getBigTransactions());
+
                     this.amount = amount;
                     commerciant = command.getCommerciant();
 
@@ -142,10 +182,22 @@ public class PayOnlineTransaction implements TransactionStrategy {
                             double initialAmount = business.getEmployees().get(currentUser.getEmail()).getSpent();
                             business.getEmployees().get(currentUser.getEmail()).setSpent(initialAmount + amount);
                             business.setTotalSpent(business.getTotalSpent() + amount);
+
+                            business.getBusinessCommerciants().putIfAbsent(seller.getCommerciant(), new BusinessCommerciant(seller.getCommerciant()));
+
+                            BusinessCommerciant comm = business.getBusinessCommerciants().get(seller.getCommerciant());
+                            comm.getEmployees().add(business.getEmployees().get(currentUser.getEmail()).getUsername());
+                            comm.setTotalReceived(comm.getTotalReceived() + amount);
                         } else if (business.getManagers().containsKey(command.getEmail())) {
                             double initialAmount = business.getManagers().get(currentUser.getEmail()).getSpent();
                             business.getManagers().get(currentUser.getEmail()).setSpent(initialAmount + amount);
                             business.setTotalSpent(business.getTotalSpent() + amount);
+
+                            business.getBusinessCommerciants().putIfAbsent(seller.getCommerciant(), new BusinessCommerciant(seller.getCommerciant()));
+
+                            BusinessCommerciant comm = business.getBusinessCommerciants().get(seller.getCommerciant());
+                            comm.getManagers().add(business.getManagers().get(currentUser.getEmail()).getUsername());
+                            comm.setTotalReceived(comm.getTotalReceived() + amount);
                         }
                     }
 
@@ -157,8 +209,21 @@ public class PayOnlineTransaction implements TransactionStrategy {
                 if (cardChanged == 1) {
                     currentUser.getTransactions().add(currentUser.getTransactions().size() - 2,
                             this);
+                    if (currentUser.getBigTransactions() == 5 && currentUser.getServicePlan().getPlan().equals("silver")) {
+                        currentUser.setBigTransactions(6);
+                        command.setAccount(account.getIban());
+                        command.setNewPlanType("gold");
+                        currentUser.getTransactions().add(currentUser.getTransactions().size() - 2,
+                                new UpgradePlanTransaction(command, currentUser, account, bank, output, 1));
+                    }
                 } else {
                     currentUser.getTransactions().add(this);
+                    if (currentUser.getBigTransactions() == 5 && currentUser.getServicePlan().getPlan().equals("silver")) {
+                        currentUser.setBigTransactions(6);
+                        command.setAccount(account.getIban());
+                        command.setNewPlanType("gold");
+                        currentUser.getTransactions().add(new UpgradePlanTransaction(command, currentUser, account, bank, output, 1));
+                    }
                 }
             }
     }
