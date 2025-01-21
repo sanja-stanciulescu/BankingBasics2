@@ -18,7 +18,7 @@ public class Card {
      * @param cardNumber the unique card number, must not be null or empty.
      * @param status     the status of the card (e.g., "active", "inactive").
      */
-    public Card(final String cardNumber,final String email, final String status) {
+    public Card(final String cardNumber, final String email, final String status) {
         this.cardNumber = cardNumber;
         this.creatorEmail = email;
         this.status = status;
@@ -80,11 +80,12 @@ public class Card {
         this.status = status;
     }
 
+    /**
+     * Retrieves the email address of the creator associated with this card.
+     *
+     * @return the email address of the card's creator.
+     */
     public String getCreatorEmail() {
         return creatorEmail;
-    }
-
-    public void setCreatorEmail(String creatorEmail) {
-        this.creatorEmail = creatorEmail;
     }
 }

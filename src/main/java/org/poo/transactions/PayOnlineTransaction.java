@@ -15,6 +15,10 @@ import org.poo.users.User;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PayOnlineTransaction implements TransactionStrategy {
+    private static final int THRESHOLD = 300;
+    private static final int NO_BIGTRANSACTIONS = 5;
+    private static final int NO_STOP = 6;
+
     private String description;
     private int timestamp;
     private Double amount;
@@ -63,20 +67,18 @@ public class PayOnlineTransaction implements TransactionStrategy {
      * transaction history.
      */
     public void makeTransaction() {
-        System.out.println("Pay online at " + timestamp);
         ClassicAccount account = pickCard(command.getCardNumber());
             if (account == null) {
                 CheckCardStatusTransaction.printError(command, "Card not found", timestamp, output);
             } else if (seller == null) {
-                System.out.println("Nu a gasit sellerul la timestamp " + timestamp);
+                return;
             } else {
                 if (command.getAmount() == 0.0) {
                     return;
                 }
                 String currency = account.getCurrency();
-                double amount;
+                double transactionAmount;
 
-                System.out.println("User is " + command.getEmail());
                 if (description != null) {
                     currentUser.getTransactions().add(this);
                     return;
@@ -87,52 +89,56 @@ public class PayOnlineTransaction implements TransactionStrategy {
                     exchangeRate1 = bank.getExchangeRate(command.getCurrency(), currency);
                     bank.getExchangeRates().add(new ExchangeRate(command.getCurrency(),
                             currency, exchangeRate1));
-                    amount = command.getAmount() * exchangeRate1;
+                    transactionAmount = command.getAmount() * exchangeRate1;
                 } else {
-                    amount = command.getAmount();
+                    transactionAmount = command.getAmount();
                 }
-
-                System.out.println("Amount is " + amount);
 
                 if (account.getType().equals("business")) {
                     BusinessAccount business = (BusinessAccount) account;
-                    if (business.getEmployees().containsKey(command.getEmail()) && amount > business.getSpendingLimit()) {
+                    if (business.getEmployees().containsKey(command.getEmail())
+                            && transactionAmount > business.getSpendingLimit()) {
                         return;
                     }
                 }
 
                 double coupon = 0.0;
-                System.out.println("Valoarea in hash este de " + account.getCoupons().get(seller.getType()));
-                if (account.getCoupons().get(seller.getType()) != -1.0 && account.getCoupons().get(seller.getType()) != 0) {
-                    coupon = account.getCoupons().get(seller.getType()) * amount;
+                if (account.getCoupons().get(seller.getType()) != -1.0
+                        && account.getCoupons().get(seller.getType()) != 0) {
+                    coupon = account.getCoupons().get(seller.getType()) * transactionAmount;
                     account.getCoupons().put(seller.getType(), -1.0);
                 }
-
-                System.out.println("Coupon is " + coupon);
 
                 double commission;
                 if (!account.getCurrency().equals("RON")) {
                     double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
                     if (account.getType().equals("business")) {
                         BusinessAccount business = (BusinessAccount) account;
-                        commission = business.getOwner().getUser().getServicePlan().getComissionRate(amount * exchangeRate);
+                        commission = business.getOwner()
+                                .getUser()
+                                .getServicePlan()
+                                .getComissionRate(transactionAmount * exchangeRate);
                     } else {
-                        commission = currentUser.getServicePlan().getComissionRate(amount * exchangeRate);
+                        commission = currentUser.getServicePlan()
+                                .getComissionRate(transactionAmount * exchangeRate);
                     }
                 } else {
                     if (account.getType().equals("business")) {
                         BusinessAccount business = (BusinessAccount) account;
-                        commission = business.getOwner().getUser().getServicePlan().getComissionRate(amount);
+                        commission = business.getOwner()
+                                .getUser()
+                                .getServicePlan()
+                                .getComissionRate(transactionAmount);
                     } else {
-                        commission = currentUser.getServicePlan().getComissionRate(amount);
+                        commission = currentUser.getServicePlan()
+                                .getComissionRate(transactionAmount);
                     }
                 }
 
-                System.out.println("Commission is " + commission * amount + " pentru cont de tipul " + currentUser.getServicePlan().getPlan());
-
                 int cardChanged = 0;
 
-                if (account.getBalance() - amount - commission * amount <= account.getMinBalance()) {
+                if (account.getBalance() - transactionAmount - commission * transactionAmount
+                        <= account.getMinBalance()) {
                     description = "Insufficient funds";
                 } else {
                     double cashback;
@@ -140,16 +146,33 @@ public class PayOnlineTransaction implements TransactionStrategy {
                         double exchangeRate = bank.getExchangeRate(account.getCurrency(), "RON");
                         if (account.getType().equals("business")) {
                             BusinessAccount business = (BusinessAccount) account;
-                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, business.getOwner().getUser(), amount * exchangeRate);
+                            cashback = seller.getCashbackStrategy()
+                                    .calculateCashback(
+                                            seller,
+                                            account,
+                                            business.getOwner().getUser(),
+                                            transactionAmount * exchangeRate
+                                    );
                         } else {
-                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, amount * exchangeRate);
+                            cashback = seller.getCashbackStrategy().calculateCashback(
+                                    seller,
+                                    account,
+                                    currentUser,
+                                    transactionAmount * exchangeRate
+                            );
                         }
                     } else {
                         if (account.getType().equals("business")) {
                             BusinessAccount business = (BusinessAccount) account;
-                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, business.getOwner().getUser(), amount);
+                            cashback = seller.getCashbackStrategy().calculateCashback(
+                                    seller,
+                                    account,
+                                    business.getOwner().getUser(),
+                                    transactionAmount
+                            );
                         } else {
-                            cashback = seller.getCashbackStrategy().calculateCashback(seller, account, currentUser, amount);
+                            cashback = seller.getCashbackStrategy().calculateCashback(
+                                    seller, account, currentUser, transactionAmount);
                         }
                     }
 
@@ -160,44 +183,60 @@ public class PayOnlineTransaction implements TransactionStrategy {
 
 
                     cashback = cashback * exchangeRate2 + coupon;
-                    System.out.println("Account has currency " + currency);
-                    System.out.println("Cashback is " + cashback);
-                    System.out.println("Type is " + seller.getCashbackType() + "\n");
 
-                    account.setBalance(account.getBalance() - amount - amount * commission + cashback);
+                    account.setBalance(account.getBalance()
+                            - transactionAmount - transactionAmount * commission + cashback);
 
-                    if (amount / exchangeRate2 + amount * commission / exchangeRate2 >= 300 && currentUser.getBigTransactions() < 5)
+                    if (transactionAmount / exchangeRate2
+                            + transactionAmount * commission / exchangeRate2 >= THRESHOLD
+                            && currentUser.getBigTransactions() < NO_BIGTRANSACTIONS) {
                         currentUser.setBigTransactions(currentUser.getBigTransactions() + 1);
+                    }
 
-                    System.out.println("Userul " + currentUser.getEmail() + " are " + currentUser.getBigTransactions());
-
-                    this.amount = amount;
+                    this.amount = transactionAmount;
                     commerciant = command.getCommerciant();
 
                     if (account.getType().equals("classic")) {
                         account.getCommerciants().getPayments().add(this);
                     } else if (account.getType().equals("business")) {
                         BusinessAccount business = (BusinessAccount) account;
+
                         if (business.getEmployees().containsKey(command.getEmail())) {
-                            double initialAmount = business.getEmployees().get(currentUser.getEmail()).getSpent();
-                            business.getEmployees().get(currentUser.getEmail()).setSpent(initialAmount + amount);
-                            business.setTotalSpent(business.getTotalSpent() + amount);
+                            double initialAmount = business.getEmployees()
+                                    .get(currentUser.getEmail()).getSpent();
+                            business.getEmployees().get(currentUser.getEmail())
+                                    .setSpent(initialAmount + transactionAmount);
+                            business.setTotalSpent(business.getTotalSpent() + transactionAmount);
 
-                            business.getBusinessCommerciants().putIfAbsent(seller.getCommerciant(), new BusinessCommerciant(seller.getCommerciant()));
+                            business.getBusinessCommerciants()
+                                    .putIfAbsent(seller.getCommerciant(),
+                                            new BusinessCommerciant(seller.getCommerciant()));
 
-                            BusinessCommerciant comm = business.getBusinessCommerciants().get(seller.getCommerciant());
-                            comm.getEmployees().add(business.getEmployees().get(currentUser.getEmail()).getUsername());
-                            comm.setTotalReceived(comm.getTotalReceived() + amount);
+                            BusinessCommerciant comm = business.getBusinessCommerciants()
+                                    .get(seller.getCommerciant());
+                            comm.getEmployees().add(business.getEmployees()
+                                    .get(currentUser.getEmail()).getUsername());
+                            comm.setTotalReceived(comm.getTotalReceived() + transactionAmount);
+
                         } else if (business.getManagers().containsKey(command.getEmail())) {
-                            double initialAmount = business.getManagers().get(currentUser.getEmail()).getSpent();
-                            business.getManagers().get(currentUser.getEmail()).setSpent(initialAmount + amount);
-                            business.setTotalSpent(business.getTotalSpent() + amount);
+                            double initialAmount = business.getManagers()
+                                    .get(currentUser.getEmail()).getSpent();
+                            business.getManagers()
+                                    .get(currentUser.getEmail())
+                                    .setSpent(initialAmount + transactionAmount);
+                            business.setTotalSpent(business.getTotalSpent() + transactionAmount);
 
-                            business.getBusinessCommerciants().putIfAbsent(seller.getCommerciant(), new BusinessCommerciant(seller.getCommerciant()));
+                            business.getBusinessCommerciants()
+                                    .putIfAbsent(seller.getCommerciant(),
+                                            new BusinessCommerciant(seller.getCommerciant()));
 
-                            BusinessCommerciant comm = business.getBusinessCommerciants().get(seller.getCommerciant());
-                            comm.getManagers().add(business.getManagers().get(currentUser.getEmail()).getUsername());
-                            comm.setTotalReceived(comm.getTotalReceived() + amount);
+                            BusinessCommerciant comm = business
+                                    .getBusinessCommerciants()
+                                    .get(seller.getCommerciant());
+                            comm.getManagers().add(business
+                                    .getManagers()
+                                    .get(currentUser.getEmail()).getUsername());
+                            comm.setTotalReceived(comm.getTotalReceived() + transactionAmount);
                         }
                     }
 
@@ -209,20 +248,26 @@ public class PayOnlineTransaction implements TransactionStrategy {
                 if (cardChanged == 1) {
                     currentUser.getTransactions().add(currentUser.getTransactions().size() - 2,
                             this);
-                    if (currentUser.getBigTransactions() == 5 && currentUser.getServicePlan().getPlan().equals("silver")) {
-                        currentUser.setBigTransactions(6);
+                    if (currentUser.getBigTransactions() == NO_BIGTRANSACTIONS
+                            && currentUser.getServicePlan().getPlan().equals("silver")) {
+                        currentUser.setBigTransactions(NO_STOP);
                         command.setAccount(account.getIban());
                         command.setNewPlanType("gold");
-                        currentUser.getTransactions().add(currentUser.getTransactions().size() - 2,
-                                new UpgradePlanTransaction(command, currentUser, account, bank, output, 1));
+                        currentUser.getTransactions()
+                                .add(currentUser.getTransactions().size() - 2,
+                                new UpgradePlanTransaction(command, currentUser, account,
+                                        bank, output, 1));
                     }
                 } else {
                     currentUser.getTransactions().add(this);
-                    if (currentUser.getBigTransactions() == 5 && currentUser.getServicePlan().getPlan().equals("silver")) {
-                        currentUser.setBigTransactions(6);
+                    if (currentUser.getBigTransactions() == NO_BIGTRANSACTIONS
+                            && currentUser.getServicePlan().getPlan().equals("silver")) {
+                        currentUser.setBigTransactions(NO_STOP);
                         command.setAccount(account.getIban());
                         command.setNewPlanType("gold");
-                        currentUser.getTransactions().add(new UpgradePlanTransaction(command, currentUser, account, bank, output, 1));
+                        currentUser.getTransactions()
+                                .add(new UpgradePlanTransaction(command, currentUser, account,
+                                        bank, output, 1));
                     }
                 }
             }

@@ -5,10 +5,27 @@ import org.poo.users.User;
 
 public class NumberOfTransactionsCashback implements CashbackStrategy {
 
-    @Override
-    public double calculateCashback(Seller seller, ClassicAccount account, User user, double transactionAmount) {
+    /**
+     * Calculates the cashback for a given transaction based on the seller's cashback strategy
+     * and updates the seller's transaction count and account coupons accordingly.
+     *
+     * @param seller the seller performing the transaction, whose cashback strategy
+     *               and transaction records are used
+     * @param account the buyer's account involved in the transaction,
+     *                which may be updated with coupons
+     * @param user the user performing the transaction,
+     *             whose details may influence the cashback calculation
+     * @param transactionAmount the monetary amount of the transaction
+     * @return the cashback amount for the transaction,
+     * which is always 0.0 in the current implementation
+     */
+    public double calculateCashback(
+            final Seller seller,
+            final ClassicAccount account,
+            final User user,
+            final double transactionAmount
+    ) {
         Integer transactions = seller.getNumberOfTransactions().get(account);
-        //System.out.println("Sunt in numberOfTransactions");
 
         if (seller.getCashbackType().equals("nrOfTransactions")) {
             if (transactions == null) {
@@ -19,19 +36,21 @@ public class NumberOfTransactionsCashback implements CashbackStrategy {
         }
         seller.getNumberOfTransactions().put(account, transactions);
 
-        //System.out.println("S-au facut la " + seller.getCommerciant() + " " + transactions + " tranzactii");
         if (transactions == null) {
             return 0;
         }
-        if (transactions == 2 ) {
-            if (account.getCoupons().get("Food") != -1)
+        if (transactions == 2) {
+            if (account.getCoupons().get("Food") != -1) {
                 account.getCoupons().put("Food", 0.02);
-        } else if (transactions == 5 ) {
-            if (account.getCoupons().get("Clothes") != -1)
+            }
+        } else if (transactions == 5) {
+            if (account.getCoupons().get("Clothes") != -1) {
                 account.getCoupons().put("Clothes", 0.05);
-        } else if (transactions == 10 ) {
-            if (account.getCoupons().get("Tech") != -1)
+            }
+        } else if (transactions == 10) {
+            if (account.getCoupons().get("Tech") != -1) {
                 account.getCoupons().put("Tech", 0.1);
+            }
         }
         return 0.0;
     }

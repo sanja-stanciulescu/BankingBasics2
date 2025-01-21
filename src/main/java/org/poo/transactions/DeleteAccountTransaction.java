@@ -191,11 +191,21 @@ public class DeleteAccountTransaction implements TransactionStrategy {
         this.account = account;
     }
 
+    /**
+     * Retrieves the email address associated with this transaction.
+     *
+     * @return the email address of the transaction
+     */
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
+    /**
+     * Sets the email address associated with the transaction.
+     *
+     * @param email the email address to set
+     */
+    public void setEmail(final String email) {
         this.email = email;
     }
 }

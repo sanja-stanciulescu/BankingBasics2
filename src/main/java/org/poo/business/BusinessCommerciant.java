@@ -12,6 +12,11 @@ public class BusinessCommerciant {
     @JsonProperty("total received")
     private double totalReceived;
 
+    /**
+     * Constructs a BusinessCommerciant instance using the specified commerciant name.
+     *
+     * @param commerciant the name of the commerciant initializing the business
+     */
     public BusinessCommerciant(final String commerciant) {
         this.commerciant = commerciant;
         this.employees = new ArrayList<>();
@@ -19,35 +24,75 @@ public class BusinessCommerciant {
         this.totalReceived = 0;
     }
 
+    /**
+     * Retrieves the name of the commerciant associated with this business entity.
+     *
+     * @return the name of the commerciant.
+     */
     public String getCommerciant() {
         return commerciant;
     }
 
-    public void setCommerciant(String commerciant) {
+    /**
+     * Sets the name of the commerciant associated with this business entity.
+     *
+     * @param commerciant the name of the commerciant to set.
+     */
+    public void setCommerciant(final String commerciant) {
         this.commerciant = commerciant;
     }
 
+    /**
+     * Retrieves the list of employees associated with the business.
+     *
+     * @return a list of employee names.
+     */
     public List<String> getEmployees() {
         return employees;
     }
 
-    public void setEmployees(List<String> employees) {
+    /**
+     * Updates the list of employees associated with the business.
+     *
+     * @param employees the list of employee names to set
+     */
+    public void setEmployees(final List<String> employees) {
         this.employees = employees;
     }
 
+    /**
+     * Retrieves the list of manager names associated with the business.
+     *
+     * @return a list of manager names.
+     */
     public List<String> getManagers() {
         return managers;
     }
 
-    public void setManagers(List<String> managers) {
+    /**
+     * Updates the list of managers associated with the business.
+     *
+     * @param managers the list of manager names to set
+     */
+    public void setManagers(final List<String> managers) {
         this.managers = managers;
     }
 
+    /**
+     * Retrieves the total amount received by the business.
+     *
+     * @return the total amount received as a double.
+     */
     public double getTotalReceived() {
         return totalReceived;
     }
 
-    public void setTotalReceived(double totalReceived) {
+    /**
+     * Updates the total amount received by the business commerciant.
+     *
+     * @param totalReceived the total amount received to set, represented as a double.
+     */
+    public void setTotalReceived(final double totalReceived) {
         this.totalReceived = totalReceived;
     }
 }

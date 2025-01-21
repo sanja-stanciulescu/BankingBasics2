@@ -202,11 +202,21 @@ public class AddCardTransaction implements TransactionStrategy {
         this.account = account;
     }
 
+    /**
+     * Retrieves the email associated with the transaction.
+     *
+     * @return the email of the user involved in the transaction.
+     */
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
+    /**
+     * Sets the email for the transaction.
+     *
+     * @param email the email address associated with the transaction
+     */
+    public void setEmail(final String email) {
         this.email = email;
     }
 }

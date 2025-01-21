@@ -8,24 +8,57 @@ import org.poo.business.Employee;
 import org.poo.business.Manager;
 import org.poo.fileio.CommandInput;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-public class TransactionBusinessReport implements TransactionStrategy{
+public class TransactionBusinessReport implements TransactionStrategy {
     private CommandInput command;
     private BusinessAccount account;
     private ArrayNode output;
     private int timestamp;
 
-    public TransactionBusinessReport(CommandInput command, BusinessAccount account, ArrayNode output) {
+    /**
+     * Constructs a TransactionBusinessReport instance that generates a business transaction
+     * report based on the provided parameters.
+     *
+     * @param command the {@code CommandInput} object containing transaction details such
+     *                as command type, account information, and transaction specifics.
+     * @param account the {@code BusinessAccount} object representing the business account
+     *                associated with the transaction report.
+     * @param output  the {@code ArrayNode} object that will store the output result
+     *                of the transaction report creation process.
+     */
+    public TransactionBusinessReport(
+            final CommandInput command,
+            final BusinessAccount account,
+            final ArrayNode output
+    ) {
         this.command = command;
         this.account = account;
         this.output = output;
     }
 
+    /**
+     * Processes the transaction based on the details provided by the {@code command}
+     * and {@code account}.
+     * Outputs the transaction details including account balance, currency, limits,
+     * and associated employees and managers in a structured JSON format to the {@code output}.
+     *
+     * If the associated {@code account} is null, an error message with the description
+     * "Account not found" is added to the {@code output}.
+     *
+     * The transaction details include the following:
+     * - Account balance, currency, IBAN, deposit limit, and spending limit.
+     * - Total deposited and total spent amounts.
+     * - A hierarchical list of associated employees and managers, sorted by their order value.
+     *
+     * Steps involved:
+     * 1. If the {@code account} is null, logs an error message.
+     * 2. If the {@code account} is present, retrieves and structures the account details.
+     * 3. Employees and managers are individually sorted and added to the structured JSON.
+     * 4. Outputs the structured JSON into the {@code output}.
+     */
     @Override
     public void makeTransaction() {
         if (account == null) {
@@ -97,36 +130,78 @@ public class TransactionBusinessReport implements TransactionStrategy{
         output.add(node);
     }
 
+    /**
+     * Retrieves the command associated with the transaction.
+     *
+     * @return the {@code CommandInput} object representing the command details.
+     */
     public CommandInput getCommand() {
         return command;
     }
 
-    public void setCommand(CommandInput command) {
+    /**
+     * Sets the command input for the transaction.
+     *
+     * @param command the {@code CommandInput} instance containing the details of the command.
+     */
+    public void setCommand(final CommandInput command) {
         this.command = command;
     }
 
+    /**
+     * Retrieves the business account associated with this transaction report.
+     *
+     * @return the {@code BusinessAccount} instance linked to this transaction report.
+     */
     public BusinessAccount getAccount() {
         return account;
     }
 
-    public void setAccount(BusinessAccount account) {
+    /**
+     * Sets the business account associated with this transaction.
+     *
+     * @param account the {@code BusinessAccount} to associate with this transaction
+     */
+    public void setAccount(final BusinessAccount account) {
         this.account = account;
     }
 
+    /**
+     * Retrieves the output as an {@code ArrayNode}.
+     *
+     * @return the output represented as an {@code ArrayNode}.
+     */
     public ArrayNode getOutput() {
         return output;
     }
 
-    public void setOutput(ArrayNode output) {
+    /**
+     * Updates the output of the transaction business report.
+     *
+     * @param output the new {@code ArrayNode} to set as the output of the transaction
+     *               business report.
+     */
+    public void setOutput(final ArrayNode output) {
         this.output = output;
     }
 
+    /**
+     * Returns the timestamp associated with the transaction.
+     *
+     * @return the timestamp of the transaction as an integer.
+     */
     @Override
     public int getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    /**
+     * Updates the timestamp of the transaction.
+     *
+     * @param timestamp the timestamp representing the time of the transaction as an
+     *                  integer value.
+     */
+    public void setTimestamp(final int timestamp) {
         this.timestamp = timestamp;
     }
 }

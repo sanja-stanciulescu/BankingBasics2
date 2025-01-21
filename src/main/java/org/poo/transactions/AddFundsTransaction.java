@@ -43,10 +43,14 @@ public class AddFundsTransaction implements TransactionStrategy {
                 if (command.getAmount() > business.getDepositLimit()) {
                     return;
                 }
-                business.getEmployees().get(email).setDeposited(business.getEmployees().get(email).getDeposited() + command.getAmount());
+                business.getEmployees().get(email)
+                        .setDeposited(business.getEmployees().get(email)
+                                .getDeposited() + command.getAmount());
                 business.setTotalDeposited(business.getTotalDeposited() + command.getAmount());
             } else if (business.getManagers().containsKey(email)) {
-                business.getManagers().get(email).setDeposited(business.getManagers().get(email).getDeposited() + command.getAmount());
+                business.getManagers().get(email)
+                        .setDeposited(business.getManagers()
+                                .get(email).getDeposited() + command.getAmount());
                 business.setTotalDeposited(business.getTotalDeposited() + command.getAmount());
             }
             if (!business.getManagers().containsKey(email)
@@ -77,11 +81,21 @@ public class AddFundsTransaction implements TransactionStrategy {
         this.timestamp = timestamp;
     }
 
+    /**
+     * Retrieves the email associated with this transaction.
+     *
+     * @return the email of the entity involved in the transaction.
+     */
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
+    /**
+     * Sets the email address for the transaction.
+     *
+     * @param email the email address associated with this transaction.
+     */
+    public void setEmail(final String email) {
         this.email = email;
     }
 }

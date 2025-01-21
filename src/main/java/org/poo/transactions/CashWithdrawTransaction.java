@@ -28,7 +28,24 @@ public class CashWithdrawTransaction implements TransactionStrategy {
     @JsonIgnore
     private Bnr bank;
 
-    public CashWithdrawTransaction(CommandInput commandInput, User user, ClassicAccount account, Card card, ArrayNode output, Bnr bank) {
+    /**
+     * Constructs a new {@code CashWithdrawTransaction} with the specified parameters.
+     *
+     * @param commandInput the {@code CommandInput} object containing the details of the command
+     * @param user the {@code User} initiating the cash withdrawal transaction
+     * @param account the {@code ClassicAccount} from which the cash is being withdrawn
+     * @param card the {@code Card} associated with the account being used for the withdrawal
+     * @param output the {@code ArrayNode} used to store output details for the transaction
+     * @param bank the {@code Bnr} bank instance processing the withdrawal transaction
+     */
+    public CashWithdrawTransaction(
+            final CommandInput commandInput,
+            final User user,
+            final ClassicAccount account,
+            final Card card,
+            final ArrayNode output,
+            final Bnr bank
+    ) {
         this.commandInput = commandInput;
         this.user = user;
         this.account = account;
@@ -40,15 +57,39 @@ public class CashWithdrawTransaction implements TransactionStrategy {
         amount = null;
     }
 
+    /**
+     * Executes a cash withdrawal transaction for a given user and their associated account and card
+     * This method ensures that all necessary validation checks are performed before processing
+     * the transaction. It supports handling user verification, account and card validation,
+     * transaction, currency conversion, and balance adjustments.
+     *
+     * If the card or account associated with the transaction is invalid, or if the email of
+     * the user is not provided or mismatches the card owner (for non-business accounts), an error
+     * message will be generated.
+     *
+     * If the card's status is "frozen", the transaction will not proceed, and a relevant
+     * description is logged. Additionally, when the account's currency is not "RON",
+     * currency conversion is applied using the exchange rate from the associated bank.
+     *
+     * During balance verification, the method ensures there are sufficient funds available in the
+     * account. If the account balance, after considering the transaction amount and applicable
+     * commissions, falls below the account's minimum balance, the transaction will be marked as
+     * unsuccessful with an "Insufficient funds" message logged. Otherwise, the account is debited,
+     * and the transaction is recorded with the withdrawal amount and description.
+     */
     @Override
     public void makeTransaction() {
         if (user == null || account == null || card == null) {
-            CheckCardStatusTransaction.printError(commandInput, "Card not found", timestamp, output);
+            CheckCardStatusTransaction.printError(commandInput, "Card not found",
+                    timestamp, output);
         } else if (commandInput.getEmail() == null) {
-            CheckCardStatusTransaction.printError(commandInput, "User not found", timestamp, output);
+            CheckCardStatusTransaction.printError(commandInput, "User not found",
+                    timestamp, output);
         } else {
-            if (!account.getType().equals("business") && !card.getCreatorEmail().equals(commandInput.getEmail())) {
-                CheckCardStatusTransaction.printError(commandInput, "Card not found", timestamp, output);
+            if (!account.getType().equals("business")
+                    && !card.getCreatorEmail().equals(commandInput.getEmail())) {
+                CheckCardStatusTransaction.printError(commandInput, "Card not found",
+                        timestamp, output);
                 return;
             }
 
@@ -68,7 +109,8 @@ public class CashWithdrawTransaction implements TransactionStrategy {
 
             double commission = user.getServicePlan().getComissionRate(commandInput.getAmount());
 
-            if (account.getBalance() - tempAmount - commission * tempAmount <= account.getMinBalance()) {
+            if (account.getBalance() - tempAmount - commission * tempAmount
+                    <= account.getMinBalance()) {
                 description = "Insufficient funds";
             } else {
                 account.setBalance(account.getBalance() - tempAmount - tempAmount * commission);
@@ -79,28 +121,58 @@ public class CashWithdrawTransaction implements TransactionStrategy {
         }
     }
 
+    /**
+     * Retrieves the description of the transaction.
+     *
+     * @return the description of the transaction
+     */
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    /**
+     * Sets the description for the transaction.
+     *
+     * @param description the description to associate with the transaction
+     */
+    public void setDescription(final String description) {
         this.description = description;
     }
 
+    /**
+     * Retrieves the timestamp of the transaction.
+     *
+     * @return the timestamp representing when the transaction occurred
+     */
     @Override
     public int getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    /**
+     * Sets the timestamp for the transaction.
+     *
+     * @param timestamp the given timestamp representing when the transaction occurred
+     */
+    public void setTimestamp(final int timestamp) {
         this.timestamp = timestamp;
     }
 
+    /**
+     * Retrieves the amount associated with the transaction.
+     *
+     * @return the amount of the transaction as a Double.
+     */
     public Double getAmount() {
         return amount;
     }
 
-    public void setAmount(Double amount) {
+    /**
+     * Sets the amount for the transaction.
+     *
+     * @param amount the amount to set for the transaction
+     */
+    public void setAmount(final Double amount) {
         this.amount = amount;
     }
 }

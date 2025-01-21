@@ -230,11 +230,21 @@ public class DeleteCardTransaction implements TransactionStrategy {
         this.cardHolder = cardHolder;
     }
 
+    /**
+     * Retrieves the email associated with this transaction.
+     *
+     * @return the email as a string.
+     */
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
+    /**
+     * Sets the email associated with the transaction.
+     *
+     * @param email the email to set.
+     */
+    public void setEmail(final String email) {
         this.email = email;
     }
 }

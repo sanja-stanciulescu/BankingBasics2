@@ -52,6 +52,13 @@ public class ClassicAccount {
         totalSpentPerCommerciant = 0.0;
     }
 
+    /**
+     * Initializes the coupons map for the account and populates it with default
+     * categories and their respective discount rates.
+     * This is typically called during the construction of a {@code ClassicAccount}
+     * instance to ensure the account has a predefined set of coupon categories
+     * with initial discount values of 0.0.
+     */
     private void createCoupons() {
         coupons = new HashMap<>();
         coupons.put("Food", 0.0);
@@ -219,19 +226,33 @@ public class ClassicAccount {
         this.commerciants = commerciants;
     }
 
+    /**
+     * Retrieves the current coupons and their respective discount rates associated with the account
+     * The map contains categories as keys and their corresponding discount rates as values.
+     *
+     * @return a {@code Map<String, Double>} where the keys are coupon categories and the values
+     * are the associated discount rates.
+     */
     public Map<String, Double> getCoupons() {
         return coupons;
     }
 
-    public void setCoupons(Map<String, Double> coupons) {
-        this.coupons = coupons;
-    }
-
+    /**
+     * Retrieves the total amount spent per commerciant associated with the account.
+     *
+     * @return the total amount spent per commerciant as a {@code double}.
+     */
     public double getTotalSpentPerCommerciant() {
         return totalSpentPerCommerciant;
     }
 
-    public void setTotalSpentPerCommerciant(double totalSpentPerCommerciant) {
+    /**
+     * Sets the total amount spent per commerciant associated with the account.
+     *
+     * @param totalSpentPerCommerciant the total amount spent per commerciant
+     *                                 as a {@code double}.
+     */
+    public void setTotalSpentPerCommerciant(final double totalSpentPerCommerciant) {
         this.totalSpentPerCommerciant = totalSpentPerCommerciant;
     }
 }

@@ -146,51 +146,102 @@ public class User {
         this.transactions = transactions;
     }
 
+    /**
+     * Returns the birth date of the user.
+     *
+     * @return the birth date as a string
+     */
     public String getBirthDate() {
         return birthDate;
     }
 
-    public void setBirthDate(String birthDate) {
+    /**
+     * Sets the birth date for the user.
+     *
+     * @param birthDate the birth date to set for the user, represented as a String
+     */
+    public void setBirthDate(final String birthDate) {
         this.birthDate = birthDate;
     }
 
+    /**
+     * Returns the occupation of the user.
+     *
+     * @return the occupation of the user
+     */
     public String getOccupation() {
         return occupation;
     }
 
-    public void setOccupation(String occupation) {
+    /**
+     * Sets the occupation of the user.
+     *
+     * @param occupation the occupation to set for the user
+     */
+    public void setOccupation(final String occupation) {
         this.occupation = occupation;
     }
 
+    /**
+     * Returns the total number of savings accounts associated with the user.
+     *
+     * @return the number of savings accounts
+     */
     public int getNumberOfSavingsAccounts() {
         return numberOfSavingsAccounts;
     }
 
-    public void setNumberOfSavingsAccounts(int numberOfSavingsAccounts) {
+    /**
+     * Sets the number of savings accounts associated with the user.
+     *
+     * @param numberOfSavingsAccounts the number of savings accounts to set
+     */
+    public void setNumberOfSavingsAccounts(final int numberOfSavingsAccounts) {
         this.numberOfSavingsAccounts = numberOfSavingsAccounts;
     }
 
+    /**
+     * Retrieves the service plan associated with the user.
+     *
+     * @return the service plan of the user, which defines the plan's features, commission rates, and other specifics.
+     */
     public Plan getServicePlan() {
         return servicePlan;
     }
 
-    public void setServicePlan(Plan servicePlan) {
+    /**
+     * Sets the service plan for the user.
+     *
+     * @param servicePlan the {@code Plan} object representing the service plan to be assigned to the user
+     */
+    public void setServicePlan(final Plan servicePlan) {
         this.servicePlan = servicePlan;
     }
 
+    /**
+     * Retrieves the list of active split-payment transactions associated with the user.
+     *
+     * @return a {@code LinkedList} containing {@code SplitPaymentTransaction} objects that represent the active transactions.
+     */
     public LinkedList<SplitPaymentTransaction> getActiveTransactions() {
         return activeTransactions;
     }
 
-    public void setActiveTransactions(LinkedList<SplitPaymentTransaction> activeTransactions) {
-        this.activeTransactions = activeTransactions;
-    }
-
+    /**
+     * Returns the number of big transactions associated with the user.
+     *
+     * @return the number of big transactions
+     */
     public int getBigTransactions() {
         return bigTransactions;
     }
 
-    public void setBigTransactions(int bigTransactions) {
+    /**
+     * Sets the number of big transactions for the user.
+     *
+     * @param bigTransactions the number of big transactions to set for the user
+     */
+    public void setBigTransactions(final int bigTransactions) {
         this.bigTransactions = bigTransactions;
     }
 }

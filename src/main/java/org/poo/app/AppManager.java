@@ -115,7 +115,8 @@ public class AppManager {
                 break;
             case "withdrawSavings":
                 searchByIban(command.getAccount());
-                transaction = new WithdrawSavingsTransaction(command, bank, finder.getUser(), finder.getAccount());
+                transaction = new WithdrawSavingsTransaction(command,
+                        bank, finder.getUser(), finder.getAccount());
                 break;
             case "payOnline":
                 searchUserByEmail(command.getEmail());
@@ -130,11 +131,12 @@ public class AppManager {
                 searchByIban(registry.getIBAN(command.getReceiver()));
                 if (finder.getAccount() == null || finder.getUser() == null) {
                     Seller seller = searchForCommerciant(command.getReceiver());
-                    transaction = new SendMoneyToCommerciantTransaction(command, currentAccount, currentUser, seller, bank, output);
+                    transaction = new SendMoneyToCommerciantTransaction(command,
+                            currentAccount, currentUser, seller, bank, output);
                     break;
                 }
                 transaction = new SendMoneyTransaction(command, currentAccount, currentUser,
-                                                       finder.getAccount(), finder.getUser(), bank, output);
+                        finder.getAccount(), finder.getUser(), bank, output);
                 break;
             case "setAlias":
                 searchByIban(command.getAccount());
@@ -156,7 +158,8 @@ public class AppManager {
                 break;
             case "addInterest":
                 searchByIban(command.getAccount());
-                transaction = new AddInterestTransaction(command, output, finder.getUser(), finder.getAccount());
+                transaction = new AddInterestTransaction(command, output,
+                        finder.getUser(), finder.getAccount());
                 break;
             case "splitPayment":
                 ArrayList<Finder> finders = new ArrayList<>();
@@ -172,7 +175,8 @@ public class AppManager {
             case "acceptSplitPayment":
                 searchUserByEmail(command.getEmail());
                 if (finder.getUser() == null) {
-                    CheckCardStatusTransaction.printError(command, "User not found", command.getTimestamp(), output);
+                    CheckCardStatusTransaction.printError(command, "User not found",
+                            command.getTimestamp(), output);
                     break;
                 }
                 Command acceptCommand = new AcceptSplitPayment(command.getEmail(),
@@ -185,7 +189,8 @@ public class AppManager {
             case "rejectSplitPayment":
                 searchUserByEmail(command.getEmail());
                 if (finder.getUser() == null) {
-                    CheckCardStatusTransaction.printError(command, "User not found", command.getTimestamp(), output);
+                    CheckCardStatusTransaction.printError(command, "User not found",
+                            command.getTimestamp(), output);
                     break;
                 }
                 Command rejectCommand = new RejectSplitPayment(command.getEmail(),
@@ -206,29 +211,35 @@ public class AppManager {
             case "businessReport":
                 searchByIban(command.getAccount());
                 if (command.getType().equals("transaction")) {
-                    transaction = new TransactionBusinessReport(command, (BusinessAccount) finder.getAccount(), output);
+                    transaction = new TransactionBusinessReport(command,
+                            (BusinessAccount) finder.getAccount(), output);
                 } else {
-                    transaction = new CommerciantBusinessReport(command, (BusinessAccount) finder.getAccount(), output);
+                    transaction = new CommerciantBusinessReport(command,
+                            (BusinessAccount) finder.getAccount(), output);
                 }
                 break;
             case "upgradePlan":
                 searchByIban(command.getAccount());
-                transaction = new UpgradePlanTransaction(command, finder.getUser(), finder.getAccount(), bank, output, 0);
+                transaction = new UpgradePlanTransaction(command, finder.getUser(),
+                        finder.getAccount(), bank, output, 0);
                 break;
             case "cashWithdrawal":
                 if (command.getEmail().isEmpty()) {
-                    CheckCardStatusTransaction.printError(command, "User not found", command.getTimestamp(), output);
+                    CheckCardStatusTransaction.printError(command, "User not found",
+                            command.getTimestamp(), output);
                     break;
                 }
                 searchByCard(command.getCardNumber());
-                transaction = new CashWithdrawTransaction(command, finder.getUser(), finder.getAccount(), finder.getCard(), output, bank);
+                transaction = new CashWithdrawTransaction(command, finder.getUser(),
+                        finder.getAccount(), finder.getCard(), output, bank);
                 break;
             case "addNewBusinessAssociate":
                 searchByIban(command.getAccount());
                 User owner = finder.getUser();
                 BusinessAccount business = (BusinessAccount) finder.getAccount();
                 searchUserByEmail(command.getEmail());
-                transaction = new AddNewBusinessAssociateTransaction(command, owner, business, finder.getUser());
+                transaction = new AddNewBusinessAssociateTransaction(command, business,
+                        finder.getUser());
                 break;
             case "changeSpendingLimit", "changeDepositLimit":
                 searchByIban(command.getAccount());
@@ -236,12 +247,14 @@ public class AppManager {
                 if (finder.getAccount().getType().equals("business")) {
                     account = (BusinessAccount) finder.getAccount();
                 } else {
-                    CheckCardStatusTransaction.printError(command, "This is not a business account", command.getTimestamp(), output);
+                    CheckCardStatusTransaction.printError(command, "This is not a business account",
+                            command.getTimestamp(), output);
                     break;
                 }
 
                 searchUserByEmail(command.getEmail());
-                transaction = new ChangeSpendingLimitTransaction(command, finder.getUser(), account, output);
+                transaction = new ChangeSpendingLimitTransaction(command, finder.getUser(),
+                        account, output);
                 break;
             default:
                 System.out.println("Invalid command");

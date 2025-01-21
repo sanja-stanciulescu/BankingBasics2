@@ -59,8 +59,9 @@ public class PrintUserTransaction implements TransactionStrategy {
             for (ClassicAccount account : user.getAccounts()) {
                 if (account.getType().equals("business")) {
                     BusinessAccount business = (BusinessAccount) account;
-                    if (business.getOwner().getUser() != user)
+                    if (business.getOwner().getUser() != user) {
                         continue;
+                    }
                 }
                 ObjectNode accountNode = mapper.createObjectNode();
                 accountNode.put("IBAN", account.getIban());

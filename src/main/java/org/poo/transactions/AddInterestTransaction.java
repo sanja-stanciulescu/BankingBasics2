@@ -98,27 +98,57 @@ public class AddInterestTransaction implements TransactionStrategy {
         this.timestamp = timestamp;
     }
 
+    /**
+     * Retrieves the amount associated with the transaction.
+     *
+     * @return the amount of the transaction as a double.
+     */
     public double getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    /**
+     * Sets the transaction amount for this operation.
+     *
+     * @param amount the amount to set for the transaction.
+     */
+    public void setAmount(final double amount) {
         this.amount = amount;
     }
 
+    /**
+     * Retrieves the currency associated with the transaction.
+     *
+     * @return the currency as a string.
+     */
     public String getCurrency() {
         return currency;
     }
 
-    public void setCurrency(String currency) {
+    /**
+     * Sets the currency for the transaction.
+     *
+     * @param currency the currency to set, represented as a string (e.g., "USD", "EUR").
+     */
+    public void setCurrency(final String currency) {
         this.currency = currency;
     }
 
+    /**
+     * Retrieves the description of the transaction.
+     *
+     * @return the description of the transaction as a string.
+     */
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    /**
+     * Sets the description for the transaction.
+     *
+     * @param description the description of the transaction to set.
+     */
+    public void setDescription(final String description) {
         this.description = description;
     }
 }

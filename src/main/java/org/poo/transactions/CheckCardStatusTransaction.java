@@ -12,6 +12,7 @@ import org.poo.users.User;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CheckCardStatusTransaction implements TransactionStrategy {
+    private static final long WARNING_BALANCE = 30;
     private String description;
     private Integer timestamp;
 
@@ -60,17 +61,19 @@ public class CheckCardStatusTransaction implements TransactionStrategy {
         if (currentAccount == null || card == null) {
             printError(command, "Card not found", command.getTimestamp(), output);
         } else {
-         if (currentAccount.getBalance() <= currentAccount.getMinBalance()) {
-             description = "You have reached the minimum amount of funds, the card will be frozen";
-             timestamp = command.getTimestamp();
-             card.setStatus("frozen");
-             user.getTransactions().add(this);
-         } else if (currentAccount.getBalance() - currentAccount.getMinBalance() <= 30 && currentAccount.getMinBalance() != 0) {
-             description = "The card is in a warning stage";
-             timestamp = command.getTimestamp();
-             card.setStatus("warning");
-             user.getTransactions().add(this);
-         }
+             if (currentAccount.getBalance() <= currentAccount.getMinBalance()) {
+                 description = "You have reached the minimum amount of funds, "
+                         + "the card will be frozen";
+                 timestamp = command.getTimestamp();
+                 card.setStatus("frozen");
+                 user.getTransactions().add(this);
+             } else if (currentAccount.getBalance() - currentAccount.getMinBalance()
+                     <= WARNING_BALANCE && currentAccount.getMinBalance() != 0) {
+                 description = "The card is in a warning stage";
+                 timestamp = command.getTimestamp();
+                 card.setStatus("warning");
+                 user.getTransactions().add(this);
+             }
         }
     }
 

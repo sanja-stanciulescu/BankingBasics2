@@ -111,46 +111,52 @@ public class SendMoneyTransaction implements TransactionStrategy {
             amount = command.getAmount() + " " + giver.getCurrency();
             transferType = "sent";
 
-            double amount;
+            double transactionAmount;
             if (!giver.getCurrency().equals(receiver.getCurrency())) {
                 double exchangeRate = bank.getExchangeRate(giver.getCurrency(),
                         receiver.getCurrency());
-                amount = command.getAmount() * exchangeRate;
+                transactionAmount = command.getAmount() * exchangeRate;
             } else {
-                amount = command.getAmount();
+                transactionAmount = command.getAmount();
             }
 
             if (giver.getType().equals("business")) {
                 BusinessAccount business = (BusinessAccount) giver;
-                System.out.println(giverUser.getEmail());
                 if (business.getEmployees().containsKey(command.getEmail())) {
-                    if (amount > business.getSpendingLimit()) {
+                    if (transactionAmount > business.getSpendingLimit()) {
                         giverUser.getTransactions().remove(this);
                         return;
                     }
-                    double initialAmount = business.getEmployees().get(giverUser.getEmail()).getSpent();
-                    business.getEmployees().get(giverUser.getEmail()).setSpent(initialAmount + amount);
-                    business.setTotalSpent(business.getTotalSpent() + amount);
+                    double initialAmount = business.getEmployees()
+                            .get(giverUser.getEmail()).getSpent();
+                    business.getEmployees()
+                            .get(giverUser.getEmail()).setSpent(initialAmount + transactionAmount);
+                    business.setTotalSpent(business.getTotalSpent() + transactionAmount);
                 } else if (business.getManagers().containsKey(giverUser.getEmail())) {
-                    double initialAmount = business.getManagers().get(giverUser.getEmail()).getSpent();
-                    business.getManagers().get(giverUser.getEmail()).setSpent(initialAmount + amount);
-                    business.setTotalSpent(business.getTotalSpent() + amount);
+                    double initialAmount = business.getManagers()
+                            .get(giverUser.getEmail()).getSpent();
+                    business.getManagers()
+                            .get(giverUser.getEmail()).setSpent(initialAmount + transactionAmount);
+                    business.setTotalSpent(business.getTotalSpent() + transactionAmount);
                 }
             }
 
             double commission;
             if (!giver.getCurrency().equals("RON")) {
                 double exchangeRate = bank.getExchangeRate(giver.getCurrency(), "RON");
-                commission = giverUser.getServicePlan().getComissionRate(command.getAmount() * exchangeRate);
+                commission = giverUser.getServicePlan()
+                        .getComissionRate(command.getAmount() * exchangeRate);
             } else {
-                commission = giverUser.getServicePlan().getComissionRate(command.getAmount());
+                commission = giverUser
+                        .getServicePlan().getComissionRate(command.getAmount());
             }
 
-            giver.setBalance(giver.getBalance() - command.getAmount() - commission * command.getAmount());
-            receiver.setBalance(receiver.getBalance() + amount);
+            giver.setBalance(giver.getBalance() - command.getAmount()
+                    - commission * command.getAmount());
+            receiver.setBalance(receiver.getBalance() + transactionAmount);
             TransactionStrategy trans = new SendMoneyTransaction(description, timestamp,
                     senderIBAN, receiverIBAN,
-                    amount + " " + receiver.getCurrency(),
+                    transactionAmount + " " + receiver.getCurrency(),
                     "received");
             receiverUser.getTransactions().add(trans);
             receiver.getTransactions().add(trans);

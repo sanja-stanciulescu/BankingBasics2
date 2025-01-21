@@ -11,6 +11,10 @@ import org.poo.fileio.CommandInput;
 import org.poo.users.User;
 
 public class SendMoneyToCommerciantTransaction implements  TransactionStrategy {
+    private static final int THRESHOLD = 300;
+    private static final int NO_BIGTRANSACTIONS = 5;
+    private static final int NO_STOP = 6;
+
     private String description;
     private int timestamp;
     private String senderIBAN;
@@ -106,30 +110,33 @@ public class SendMoneyToCommerciantTransaction implements  TransactionStrategy {
             amount = command.getAmount() + " " + giver.getCurrency();
             transferType = "sent";
 
-            double amount = command.getAmount();
+            double transactionAmount = command.getAmount();
 
             if (giver.getType().equals("business")) {
                 BusinessAccount business = (BusinessAccount) giver;
-                if (business.getEmployees().containsKey(command.getEmail()) && amount > business.getSpendingLimit()) {
+                if (business.getEmployees().containsKey(command.getEmail())
+                        && transactionAmount > business.getSpendingLimit()) {
                     return;
                 }
             }
 
             double coupon = 0.0;
-            if (giver.getCoupons().get(receiver.getType()) != -1.0 && giver.getCoupons().get(receiver.getType()) != 0) {
-                coupon = giver.getCoupons().get(receiver.getType()) * amount;
+            if (giver.getCoupons().get(receiver.getType()) != -1.0
+                    && giver.getCoupons().get(receiver.getType()) != 0) {
+                coupon = giver.getCoupons().get(receiver.getType()) * transactionAmount;
                 giver.getCoupons().put(receiver.getType(), -1.0);
             }
 
             double commission;
             if (!giver.getCurrency().equals("RON")) {
                 double exchangeRate = bank.getExchangeRate(giver.getCurrency(), "RON");
-                commission = giverUser.getServicePlan().getComissionRate(command.getAmount() * exchangeRate);
+                commission = giverUser.getServicePlan()
+                        .getComissionRate(command.getAmount() * exchangeRate);
             } else {
                 commission = giverUser.getServicePlan().getComissionRate(command.getAmount());
             }
 
-            if (giver.getBalance() - amount - commission <= giver.getMinBalance()) {
+            if (giver.getBalance() - transactionAmount - commission <= giver.getMinBalance()) {
                 description = "Insufficient funds";
                 return;
             }
@@ -137,9 +144,12 @@ public class SendMoneyToCommerciantTransaction implements  TransactionStrategy {
             double cashback;
             if (!giver.getCurrency().equals("RON")) {
                 double exchangeRate = bank.getExchangeRate(giver.getCurrency(), "RON");
-                cashback = receiver.getCashbackStrategy().calculateCashback(receiver, giver, giverUser, command.getAmount() * exchangeRate);
+                cashback = receiver.getCashbackStrategy()
+                        .calculateCashback(receiver, giver, giverUser,
+                                command.getAmount() * exchangeRate);
             } else {
-                cashback = receiver.getCashbackStrategy().calculateCashback(receiver, giver, giverUser, command.getAmount());
+                cashback = receiver.getCashbackStrategy()
+                        .calculateCashback(receiver, giver, giverUser, command.getAmount());
             }
 
             double exchangeRate2 = 1;
@@ -151,56 +161,79 @@ public class SendMoneyToCommerciantTransaction implements  TransactionStrategy {
 
             if (giver.getType().equals("business")) {
                 BusinessAccount business = (BusinessAccount) giver;
-                System.out.println(giverUser.getEmail());
                 if (business.getEmployees().containsKey(command.getEmail())) {
-                    if (amount + commission > business.getSpendingLimit())
+                    if (transactionAmount + commission > business.getSpendingLimit()) {
                         return;
-                    double initialAmount = business.getEmployees().get(giverUser.getEmail()).getSpent();
-                    business.getEmployees().get(giverUser.getEmail()).setSpent(initialAmount + amount);
-                    business.setTotalSpent(business.getTotalSpent() + amount);
+                    }
 
-                    business.getBusinessCommerciants().putIfAbsent(receiver.getCommerciant(), new BusinessCommerciant(receiver.getCommerciant()));
+                    double initialAmount = business.getEmployees()
+                            .get(giverUser.getEmail()).getSpent();
+                    business.getEmployees().get(giverUser.getEmail())
+                            .setSpent(initialAmount + transactionAmount);
+                    business.setTotalSpent(business.getTotalSpent() + transactionAmount);
 
-                    BusinessCommerciant comm = business.getBusinessCommerciants().get(receiver.getCommerciant());
-                    comm.getEmployees().add(business.getEmployees().get(giverUser.getEmail()).getUsername());
-                    comm.setTotalReceived(comm.getTotalReceived() + amount);
+                    business.getBusinessCommerciants()
+                            .putIfAbsent(receiver.getCommerciant(),
+                                    new BusinessCommerciant(receiver.getCommerciant()));
+
+                    BusinessCommerciant comm = business.getBusinessCommerciants()
+                            .get(receiver.getCommerciant());
+                    comm.getEmployees().add(business.getEmployees()
+                            .get(giverUser.getEmail()).getUsername());
+                    comm.setTotalReceived(comm.getTotalReceived() + transactionAmount);
                 } else if (business.getManagers().containsKey(giverUser.getEmail())) {
-                    double initialAmount = business.getManagers().get(giverUser.getEmail()).getSpent();
-                    business.getManagers().get(giverUser.getEmail()).setSpent(initialAmount + amount);
-                    business.setTotalSpent(business.getTotalSpent() + amount);
+                    double initialAmount = business.getManagers()
+                            .get(giverUser.getEmail()).getSpent();
+                    business.getManagers().get(giverUser.getEmail())
+                            .setSpent(initialAmount + transactionAmount);
+                    business.setTotalSpent(business.getTotalSpent() + transactionAmount);
 
-                    business.getBusinessCommerciants().putIfAbsent(receiver.getCommerciant(), new BusinessCommerciant(receiver.getCommerciant()));
+                    business.getBusinessCommerciants()
+                            .putIfAbsent(receiver.getCommerciant(),
+                                    new BusinessCommerciant(receiver.getCommerciant()));
 
-                    BusinessCommerciant comm = business.getBusinessCommerciants().get(receiver.getCommerciant());
-                    comm.getManagers().add(business.getManagers().get(giverUser.getEmail()).getUsername());
-                    comm.setTotalReceived(comm.getTotalReceived() + amount);
+                    BusinessCommerciant comm = business.getBusinessCommerciants()
+                            .get(receiver.getCommerciant());
+                    comm.getManagers().add(business.getManagers()
+                            .get(giverUser.getEmail()).getUsername());
+                    comm.setTotalReceived(comm.getTotalReceived() + transactionAmount);
                 }
             }
 
-            giver.setBalance(giver.getBalance() - command.getAmount() - commission * command.getAmount() + cashback);
+            giver.setBalance(giver.getBalance() - command.getAmount()
+                    - commission * command.getAmount() + cashback);
 
-            if (amount / exchangeRate2 + amount * commission / exchangeRate2 > 300 && giverUser.getBigTransactions() < 5)
+            if (transactionAmount / exchangeRate2 + transactionAmount * commission
+                    / exchangeRate2 > THRESHOLD
+                    && giverUser.getBigTransactions() < NO_BIGTRANSACTIONS) {
                 giverUser.setBigTransactions(giverUser.getBigTransactions() + 1);
+            }
         }
 
         if (giver.getType().equals("business")) {
             BusinessAccount business = (BusinessAccount) giver;
             if (business.getOwner().getUser() == giverUser) {
                 giverUser.getTransactions().add(this);
-                if (giverUser.getBigTransactions() == 5 && giverUser.getServicePlan().getPlan().equals("silver")) {
-                    giverUser.setBigTransactions(6);
+                if (giverUser.getBigTransactions() == NO_BIGTRANSACTIONS
+                        && giverUser.getServicePlan().getPlan().equals("silver")) {
+                    giverUser.setBigTransactions(NO_STOP);
                     command.setAccount(giver.getIban());
                     command.setNewPlanType("gold");
-                    giverUser.getTransactions().add(new UpgradePlanTransaction(command, giverUser, giver, bank, output, 1));
+                    giverUser.getTransactions()
+                            .add(new UpgradePlanTransaction(command, giverUser, giver,
+                                    bank, output, 1));
                 }
             }
         } else {
             giverUser.getTransactions().add(this);
-            if (giverUser.getBigTransactions() == 5 && giverUser.getServicePlan().getPlan().equals("silver")) {
-                giverUser.setBigTransactions(6);
+            if (giverUser.getBigTransactions() == NO_BIGTRANSACTIONS
+                    && giverUser.getServicePlan().getPlan().equals("silver")) {
+                giverUser.setBigTransactions(NO_STOP);
                 command.setAccount(giver.getIban());
                 command.setNewPlanType("gold");
-                giverUser.getTransactions().add(new UpgradePlanTransaction(command, giverUser, giver, bank, output, 1));
+                giverUser.getTransactions()
+                        .add(new UpgradePlanTransaction(command, giverUser, giver,
+                                bank, output, 1));
             }
         }
 

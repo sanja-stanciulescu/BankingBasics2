@@ -2,12 +2,10 @@ package org.poo.transactions.split_payment;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.poo.accounts.ClassicAccount;
 import org.poo.app.Finder;
 import org.poo.exchangeRates.Bnr;
 import org.poo.fileio.CommandInput;
 import org.poo.transactions.TransactionStrategy;
-import org.poo.users.User;
 
 import java.util.*;
 
@@ -104,13 +102,16 @@ public class SplitPaymentTransaction implements TransactionStrategy {
             if (everythingOk) {
                 for (int i = 0; i < finders.size(); i++) {
                     double actualAmount = convertAmount(amountForUsers.get(i), finders.get(i));
-                    finders.get(i).getAccount().setBalance(finders.get(i).getAccount().getBalance() - actualAmount);
+                    finders.get(i).getAccount().setBalance(finders.get(i)
+                            .getAccount().getBalance() - actualAmount);
 
                     finders.get(i).getUser().getTransactions().add(this);
-                    finders.get(i).getUser().getTransactions().sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
+                    finders.get(i).getUser().getTransactions()
+                            .sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
 
                     finders.get(i).getAccount().getTransactions().add(this);
-                    finders.get(i).getAccount().getTransactions().sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
+                    finders.get(i).getAccount().getTransactions()
+                            .sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
                 }
                 if (splitPaymentType.equals("equal")) {
                     amount = command.getAmount() / finders.size();
@@ -127,21 +128,22 @@ public class SplitPaymentTransaction implements TransactionStrategy {
      * balance.
      * If any account is invalid or lacks sufficient funds, an error is set.
      *
-     * @param finders the list of finders representing the involved accounts.
+     * @param list the list of finders representing the involved accounts.
      */
-    private void checkAccounts(final ArrayList<Finder> finders, List<Double> amountForUsers) {
+    private void checkAccounts(final ArrayList<Finder> list,
+                               final List<Double> amountList) {
         everythingOk = true;
-        for (int i = 0; i < finders.size(); i++) {
-            if (finders.get(i).getUser() == null || finders.get(i).getAccount() == null) {
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getUser() == null || list.get(i).getAccount() == null) {
                 everythingOk = false;
             }
-            double amount = convertAmount(amountForUsers.get(i), finders.get(i));
-            if (Double.compare(finders.get(i).getAccount().getBalance(), amount) < 0) {
-                error = "Account " + finders.get(i).getAccount().getIban()
+            double convertedAmount = convertAmount(amountList.get(i), list.get(i));
+            if (Double.compare(list.get(i).getAccount().getBalance(), convertedAmount) < 0) {
+                error = "Account " + list.get(i).getAccount().getIban()
                         + " has insufficient funds for a split payment.";
-                addToAll(finders);
+                addToAll(list);
                 if (splitPaymentType.equals("equal")) {
-                    this.amount = command.getAmount() / finders.size();
+                    this.amount = command.getAmount() / list.size();
                     this.amountForUsers = null;
                 } else {
                     this.amount = null;
@@ -155,13 +157,23 @@ public class SplitPaymentTransaction implements TransactionStrategy {
         }
     }
 
-    private void addToAll(final ArrayList<Finder> finders) {
-        for (int i = 0; i < finders.size(); i++) {
-            finders.get(i).getUser().getTransactions().add(this);
-            finders.get(i).getUser().getTransactions().sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
+    /**
+     * Adds the current transaction to the list of transactions for all users and accounts
+     * associated with the given list of finders. It also ensures the transactions are
+     * sorted by their timestamp in ascending order.
+     *
+     * @param list the list of {@code Finder} objects representing the users and
+     *                accounts involved in the transaction.
+     */
+    private void addToAll(final ArrayList<Finder> list) {
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).getUser().getTransactions().add(this);
+            list.get(i).getUser().getTransactions()
+                    .sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
 
-            finders.get(i).getAccount().getTransactions().add(this);
-            finders.get(i).getAccount().getTransactions().sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
+            list.get(i).getAccount().getTransactions().add(this);
+            list.get(i).getAccount().getTransactions()
+                    .sort(Comparator.comparingInt(TransactionStrategy::getTimestamp));
         }
     }
 
@@ -173,17 +185,25 @@ public class SplitPaymentTransaction implements TransactionStrategy {
      * @return the converted amount for the given finder.
      */
     private double convertAmount(final Double givenAmount, final Finder finder) {
-        double amount;
+        double convertedAmount;
         if (!command.getCurrency().equals(finder.getAccount().getCurrency())) {
             double exchangeRate = bank.getExchangeRate(command.getCurrency(),
                                                         finder.getAccount().getCurrency());
-            amount = givenAmount * exchangeRate;
+            convertedAmount = givenAmount * exchangeRate;
         } else {
-            amount = givenAmount;
+            convertedAmount = givenAmount;
         }
-        return amount;
+        return convertedAmount;
     }
 
+    /**
+     * Checks if all users involved in the split payment transaction have approved it.
+     * If all users have approved, removes the current transaction from their active
+     * transactions list.
+     *
+     * @return {@code true} if all users have approved the transaction,
+     * otherwise {@code false}.
+     */
     private boolean allUsersApproved() {
         if (approvals.values().stream().allMatch(t -> t)) {
             for (Finder finder : finders) {
@@ -194,7 +214,14 @@ public class SplitPaymentTransaction implements TransactionStrategy {
         return false;
     }
 
-    public void approveUser(String email) {
+    /**
+     * Approves the user identified by the given email for the current split payment transaction.
+     * If the user is successfully approved, their active transactions are updated.
+     * Once all users are approved, the waiting flag is reset, and the transaction is executed.
+     *
+     * @param email the email address of the user to be approved
+     */
+    public void approveUser(final String email) {
         if (approvals.containsKey(email)) {
             approvals.put(email, true);
             int i;
@@ -212,7 +239,14 @@ public class SplitPaymentTransaction implements TransactionStrategy {
         }
     }
 
-    public void rejectUser(String email) {
+    /**
+     * Rejects a user associated with the split payment transaction by their email.
+     * The method marks the user's approval status as false, resets the waiting count,
+     * sets the transaction status to not okay, and attempts to execute the transaction.
+     *
+     * @param email the email address of the user to be rejected from the transaction
+     */
+    public void rejectUser(final String email) {
         if (approvals.containsKey(email)) {
             approvals.put(email, false);
             everythingOk = false;
@@ -329,19 +363,41 @@ public class SplitPaymentTransaction implements TransactionStrategy {
         this.error = error;
     }
 
+    /**
+     * Retrieves the type of split payment associated with this transaction.
+     *
+     * @return the type of the split payment as a string.
+     */
     public String getSplitPaymentType() {
         return splitPaymentType;
     }
 
-    public void setSplitPaymentType(String splitPaymentType) {
+    /**
+     * Sets the type of the split payment for the transaction.
+     *
+     * @param splitPaymentType the type of the split payment to set.
+     */
+    public void setSplitPaymentType(final String splitPaymentType) {
         this.splitPaymentType = splitPaymentType;
     }
 
+    /**
+     * Retrieves the list of amounts allocated to the users involved in the transaction.
+     *
+     * @return a list of {@code Double} values representing the amounts for each user
+     * in the transaction.
+     */
     public List<Double> getAmountForUsers() {
         return amountForUsers;
     }
 
-    public void setAmountForUsers(List<Double> amountForUsers) {
+    /**
+     * Sets the list of amounts to be split among users involved in the transaction.
+     * Each value in the list represents the amount assigned to a corresponding user.
+     *
+     * @param amountForUsers the list of amounts to set for each user.
+     */
+    public void setAmountForUsers(final List<Double> amountForUsers) {
         this.amountForUsers = amountForUsers;
     }
 }

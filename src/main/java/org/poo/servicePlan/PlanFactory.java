@@ -1,7 +1,15 @@
 package org.poo.servicePlan;
 
 public class PlanFactory {
-    public static Plan createPlan(String type) {
+    /**
+     * Creates a plan instance based on the specified type.
+     *
+     * @param type the type of plan to create. Valid values are "standard", "student",
+     *             "silver", and "gold".
+     *             If the type does not match any of these values, the method will return null.
+     * @return a Plan instance corresponding to the specified type, or null if the type is invalid.
+     */
+    public static Plan createPlan(final String type) {
         Plan plan;
         switch (type) {
             case "standard":

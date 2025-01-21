@@ -66,7 +66,8 @@ public class AddAccountTransaction implements TransactionStrategy {
         } else if (command.getAccountType().equals("business")) {
             iban = Utils.generateIBAN();
             String currency = command.getCurrency();
-            currentUser.getAccounts().add(new BusinessAccount(iban, currency, "business", currentUser, bank));
+            currentUser.getAccounts().add(
+                    new BusinessAccount(iban, currency, "business", currentUser, bank));
         }
         description = "New account created";
         registry.registerIBAN(iban, iban);
