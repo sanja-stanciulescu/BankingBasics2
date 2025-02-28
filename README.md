@@ -1,4 +1,4 @@
-# Project Assignment POO  - J. POO Morgan - Phase One
+# Project Assignment POO  - Banking Basic - Phase Two
 
 <div align="center"><img src="https://media1.tenor.com/m/l2KqipO86aAAAAAd/banking-that.gif" width="500px" alt=""></div>
 
